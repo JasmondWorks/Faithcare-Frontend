@@ -1,4 +1,4 @@
-import { signUpOrg, signUpUser } from "@/api/auth";
+import { signUpOrg, signUpUser } from "@/api/auth/auth";
 import {
   Sparkles,
   Mail,

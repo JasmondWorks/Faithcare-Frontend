@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCommunities, createCommunity, deleteCommunity } from "@/api/organization";
+import { getCommunities, createCommunity, deleteCommunity } from "@/api/organization/church";
 import { useAuth } from "../providers/AuthProvider";
 import { toast } from "react-hot-toast";
 import { useSearch } from "../contexts/SearchContext";

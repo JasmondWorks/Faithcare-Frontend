@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
-import { bulkUploadMembers } from "@/api/organization";
+import { bulkUploadMembers } from "@/api/organization/church";
 import { useAuth } from "../providers/AuthProvider";
 import {
   DropdownMenu,

@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "./ui/card";
 import { Button } from "@/components/ui/button";
 import SecondTimersTable from "./SecondTimersTable";
-import { getFirstTimers } from "@/api/organization";
+import { getFirstTimers } from "@/api/organization/church";
 import { useAuth } from "../providers/AuthProvider";
 import { AddMemberModal } from "./AddMemberModal";
 

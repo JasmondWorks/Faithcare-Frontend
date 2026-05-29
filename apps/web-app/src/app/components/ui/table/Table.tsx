@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronDown, MinusIcon } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { TableColumn, TableProps } from "./types";
 import { cn } from "@/app/components/ui/utils";
 import AppPagination from "../AppPagination";
@@ -38,8 +38,6 @@ const Table = <T extends { id: string | number }>(props: TableProps<T>) => {
   const [selectedItems, setSelectedItems] = useState<Set<string | number>>(
     new Set(),
   );
-  const [selectAll, setSelectAll] = useState(false);
-
   const total = data?.length ?? 0;
   const selectedCount = selectedItems.size;
   const allSelected = total > 0 && selectedCount === total;
@@ -48,10 +46,8 @@ const Table = <T extends { id: string | number }>(props: TableProps<T>) => {
   const handleHeaderToggle = () => {
     if (allSelected || someSelected) {
       setSelectedItems(new Set());
-      setSelectAll(false);
     } else {
       setSelectedItems(new Set(data?.map((item) => item.id)));
-      setSelectAll(true);
     }
   };
 
@@ -59,7 +55,6 @@ const Table = <T extends { id: string | number }>(props: TableProps<T>) => {
     const next = new Set(selectedItems);
     next.has(id) ? next.delete(id) : next.add(id);
     setSelectedItems(next);
-    setSelectAll(next.size === data?.length);
   };
 
   useEffect(() => {

@@ -7,7 +7,7 @@ import {
   getPrayerRequests,
   updatePrayerRequest,
   deletePrayerRequest,
-} from "@/api/organization";
+} from "@/api/organization/church";
 import { useAuth } from "../providers/AuthProvider";
 import { toast } from "react-hot-toast";
 import { useSearch } from "../contexts/SearchContext";

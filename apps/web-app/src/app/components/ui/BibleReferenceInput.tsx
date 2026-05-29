@@ -6,7 +6,6 @@ import { searchBibleReferences, type BibleReferenceSearchResult } from "@/api/sc
 import { searchVerse } from "@/api/memorization/memorization";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "./hover-card";
 import { cn } from "@/lib/utils";
-import { Input } from "./input";
 import { InputField } from "./InputField";
 
 export function BibleReferenceInput({

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getFollowUps, updateFollowUp, deleteFollowUp } from "@/api/organization";
+import { getFollowUps, updateFollowUp, deleteFollowUp } from "@/api/organization/church";
 import { useAuth } from "../providers/AuthProvider";
 import { toast } from "react-hot-toast";
 import { useSearch } from "../contexts/SearchContext";

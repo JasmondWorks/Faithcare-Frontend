@@ -1,6 +1,6 @@
 // ── Shared verse & reflection ────────────────────────────────────────────────
 
-import { BaseEntity } from "../shared/types";
+import type { BaseEntity } from "../shared/types";
 
 export interface Verse {
   number: number;

@@ -61,7 +61,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "./ui/sheet";
-import { getCommunities, getFirstTimers, getPrayerRequests } from "@/api/organization";
+import { getCommunities, getFirstTimers, getPrayerRequests } from "@/api/organization/church";
 
 interface HeaderProps {
   title: string;

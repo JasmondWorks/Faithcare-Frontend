@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useSearch } from "../contexts/SearchContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getSalvationRecords } from "@/api/organization";
+import { getSalvationRecords } from "@/api/organization/church";
 import { useAuth } from "../providers/AuthProvider";
 import { AddMemberModal } from "./AddMemberModal";
 import { Card } from "./ui/card";

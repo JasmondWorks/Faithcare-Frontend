@@ -9,7 +9,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { DataManagementActions } from "./DataManagementActions";
 
 import { Button } from "@/components/ui/button";
-import { updateFirstTimerStatus, createFollowUp, updateFirstTimerVisitType } from "@/api/organization";
+import { updateFirstTimerStatus, createFollowUp, updateFirstTimerVisitType } from "@/api/organization/church";
 import { useAuth } from "../providers/AuthProvider";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";

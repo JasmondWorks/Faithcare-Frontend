@@ -28,7 +28,7 @@ import { LoadingScreen } from "../components/LoadingScreen";
 import { InputField } from "../components/ui/InputField";
 import { Button } from "@/components/ui/button";
 import z from "zod";
-import { getOrganizationBySlug } from "@/api/organization";
+import { getOrganizationBySlug } from "@/api/organization/church";
 
 const individualOnboardingSchema = z.object({
   location: z.string().min(1, "Location is required"),

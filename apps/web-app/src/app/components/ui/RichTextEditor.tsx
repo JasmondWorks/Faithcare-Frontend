@@ -16,7 +16,6 @@ import {
   Quote,
   Undo,
   Redo,
-  Link as LinkIcon,
 } from "lucide-react";
 import { cn } from "./utils";
 import { Button } from "@/components/ui/button";

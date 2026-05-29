@@ -6,7 +6,7 @@ import { useLayout } from "../contexts/LayoutContext";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getFollowUps, sendBulkMessage } from "@/api/organization";
+import { getFollowUps, sendBulkMessage } from "@/api/organization/church";
 import { useAuth } from "../providers/AuthProvider";
 import { toast } from "react-hot-toast";
 
