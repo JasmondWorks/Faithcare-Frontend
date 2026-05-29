@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(mv Layouts Layouts_tmp)",
+      "Bash(mv Layouts_tmp layouts)",
+      "Bash(npm run *)"
     ]
   }
 }
