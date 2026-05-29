@@ -46,7 +46,7 @@ export function OTPVerification() {
   });
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (resendTimer > 0 && !canResend) {
       interval = setInterval(() => {
         setResendTimer((prev) => prev - 1);

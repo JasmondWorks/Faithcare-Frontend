@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, KeyboardEvent } from "react";
+import { useState, useRef, useEffect } from "react";
+import type { KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
 import { GradeButtons } from "./GradeButtons";
 import type { ClozeChallenge, Grade } from "@/api/memorization/types";
