@@ -1,7 +1,7 @@
 ﻿import { useState } from "react";
 import { Loader2, Lock } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { changePassword } from "@/api/auth";
+import { changePassword } from "@/api/auth/auth";
 import ErrorMessage from "./ui/error-message";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";

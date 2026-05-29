@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Lock, Eye, EyeOff, ArrowRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { acceptInvite } from "@/api/auth";
+import { acceptInvite } from "@/api/auth/auth";
 
 const schema = z
   .object({

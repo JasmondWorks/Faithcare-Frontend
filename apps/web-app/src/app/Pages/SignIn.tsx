@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 import { Form } from "../components/ui/form";
 import { InputField } from "../components/ui/InputField";
 import { Button } from "@/components/ui/button";
-import { login } from "@/api/auth";
+import { login } from "@/api/auth/auth";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),

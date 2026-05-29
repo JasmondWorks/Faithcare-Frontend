@@ -18,7 +18,7 @@ import {
   createSalvationRecord,
   createPrayerRequest,
   createFollowUp,
-} from "@/api/organization";
+} from "@/api/organization/church";
 import { useAuth } from "../providers/AuthProvider";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";

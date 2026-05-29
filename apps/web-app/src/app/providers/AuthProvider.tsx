@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import {
   refreshToken as callRefreshTokenAPI,
   logout as callLogoutAPI,
-} from "@/api/auth";
+} from "@/api/auth/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { setInMemoryToken } from "@/api/helper";
 import { LoadingScreen } from "../components/LoadingScreen";

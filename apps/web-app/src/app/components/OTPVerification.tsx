@@ -6,7 +6,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { verifyOTP, resendOTP } from "@/api/auth";
+import { verifyOTP, resendOTP } from "@/api/auth/auth";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../providers/AuthProvider";
 import Logo from "./Logo";

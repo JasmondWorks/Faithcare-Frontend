@@ -30,7 +30,7 @@ import {
   MEMBERS_COUNT,
   ORGANIZATION_ROLE_OPTIONS,
 } from "../constants/select-options.constants";
-import { completeOrganizationOnboarding } from "@/api/organization";
+import { completeOrganizationOnboarding } from "@/api/organization/church";
 
 const orgSchema = z.object({
   churchName: z.string().min(1, "Church name is required"),

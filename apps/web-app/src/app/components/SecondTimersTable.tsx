@@ -7,7 +7,7 @@ import { DataManagementActions } from "./DataManagementActions";
 import { AddMemberModal } from "./AddMemberModal";
 import { SendFollowUpModal } from "./SendFollowUpModal";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { updateFirstTimerStatus, createFollowUp } from "@/api/organization";
+import { updateFirstTimerStatus, createFollowUp } from "@/api/organization/church";
 import { useAuth } from "../providers/AuthProvider";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";

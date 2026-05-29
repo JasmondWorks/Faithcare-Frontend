@@ -4,7 +4,10 @@
       "Bash(npm install *)",
       "Bash(mv Layouts Layouts_tmp)",
       "Bash(mv Layouts_tmp layouts)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(cat)",
+      "Bash(chmod +x /tmp/find_unused.sh)",
+      "Bash(bash /tmp/find_unused.sh)"
     ]
   }
 }

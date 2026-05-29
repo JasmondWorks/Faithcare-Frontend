@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Loader2, AlertTriangle, CheckCircle2, Sparkles } from "lucide-react";
-import { verifyInviteToken } from "@/api/auth";
+import { verifyInviteToken } from "@/api/auth/auth";
 import { SetPasswordForm } from "../components/SetPasswordForm";
 import Logo from "../components/Logo";
 import { Button } from "@/components/ui/button";

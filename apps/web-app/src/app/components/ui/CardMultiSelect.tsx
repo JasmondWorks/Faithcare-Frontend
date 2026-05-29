@@ -1,7 +1,5 @@
-import * as React from "react";
 import { Check } from "lucide-react";
 import { cn } from "./utils";
-import { Button } from "@/components/ui/button";
 
 export interface CardMultiSelectOption {
   label: string;

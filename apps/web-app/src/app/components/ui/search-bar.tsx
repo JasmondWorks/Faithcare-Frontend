@@ -1,6 +1,4 @@
-﻿import React from "react";
-import { Card } from "./card";
-import { Search } from "lucide-react";
+﻿import { Search } from "lucide-react";
 
 export default function SearchBar({
   placeholder,

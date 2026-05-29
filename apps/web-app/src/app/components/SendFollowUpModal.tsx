@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getMessageTemplates, getMessageTemplatePresets } from "@/api/organization";
+import { getMessageTemplates, getMessageTemplatePresets } from "@/api/organization/church";
 import {
   Dialog,
   DialogContent,

@@ -12,7 +12,7 @@ import {
   AlertCircle,
   ArrowRight,
 } from "lucide-react";
-import { registerFirstTimerPublic, verifyQrToken } from "@/api/organization";
+import { registerFirstTimerPublic, verifyQrToken } from "@/api/organization/church";
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────

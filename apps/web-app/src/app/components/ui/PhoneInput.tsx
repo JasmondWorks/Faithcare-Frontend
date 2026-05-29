@@ -6,7 +6,6 @@ import en from "react-phone-number-input/locale/en.json";
 import { cn } from "./utils";
 import { ChevronDown, Search } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
-import { Button } from "@/components/ui/button";
 
 export interface PhoneInputProps extends Omit<
   React.ComponentProps<"input">,
@@ -22,7 +21,7 @@ const CustomInput = React.forwardRef<HTMLInputElement, any>(
     const prefix = `+${dialCode}`;
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      const { selectionStart, value } = e.currentTarget;
+      const { selectionStart } = e.currentTarget;
       const prefixWithSpace = `${prefix} `;
       const isAtPrefix = (selectionStart || 0) <= prefixWithSpace.length;
 
@@ -68,7 +67,7 @@ const CustomInput = React.forwardRef<HTMLInputElement, any>(
 );
 CustomInput.displayName = "CustomInput";
 
-const CountrySelect = ({ value, onChange, labels, options, disabled }: any) => {
+const CountrySelect = ({ value, onChange, labels, options }: any) => {
   const [search, setSearch] = React.useState("");
   const [open, setOpen] = React.useState(false);
   const Flag = Flags ? (Flags as any)[value] : null;
@@ -155,7 +154,7 @@ const CountrySelect = ({ value, onChange, labels, options, disabled }: any) => {
 };
 
 export const PhoneInputComponent = React.forwardRef<any, PhoneInputProps>(
-  ({ value, onChange, className, disabled, placeholder, ...props }, ref) => {
+  ({ value, onChange, className, disabled, placeholder }) => {
     const [country, setCountry] = React.useState<any>("NG");
     const dialCode = React.useMemo(() => {
       try {

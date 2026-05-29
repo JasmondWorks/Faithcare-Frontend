@@ -1,4 +1,4 @@
-﻿import { forgotPassword, resetPassword } from "@/api/auth";
+﻿import { forgotPassword, resetPassword } from "@/api/auth/auth";
 import {
   Mail,
   ArrowRight,

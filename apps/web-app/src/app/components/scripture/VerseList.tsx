@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Bookmark, BookmarkCheck } from "lucide-react";
+import { useRef } from "react";
+import { Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Verse } from "@/api/scripture/types";
 
@@ -16,7 +16,6 @@ export function VerseList({
   bookmarkedRefs = new Set(),
   onBookmark,
 }: VerseListProps) {
-  const [hoveredRef, setHoveredRef] = useState<string | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleTouchStart = (verse: Verse) => {
@@ -37,7 +36,6 @@ export function VerseList({
     <div className="space-y-3">
       {verses.map((verse) => {
         const isBookmarked = bookmarkedRefs.has(verse.reference);
-        const isHovered = hoveredRef === verse.reference;
 
         return (
           <div
@@ -46,8 +44,6 @@ export function VerseList({
               "relative group leading-[1.8] text-[17px] text-foreground py-1 pr-8 rounded-md transition-colors",
               isBookmarked && "bg-accent/5",
             )}
-            onMouseEnter={() => bookmarkable && setHoveredRef(verse.reference)}
-            onMouseLeave={() => setHoveredRef(null)}
             onTouchStart={() => handleTouchStart(verse)}
             onTouchEnd={handleTouchEnd}
             onTouchMove={handleTouchEnd}

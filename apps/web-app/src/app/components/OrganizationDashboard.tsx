@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLayout } from "../contexts/LayoutContext";
 import { useAuth } from "../providers/AuthProvider";
 import { useQuery } from "@tanstack/react-query";
-import { getDashboardTrends, getFirstTimers, getFollowUps } from "@/api/organization";
+import { getDashboardTrends, getFirstTimers, getFollowUps } from "@/api/organization/church";
 import { UserPlus, Loader2 } from "lucide-react";
 import { DashboardOverview } from "./DashboardOverview";
 import { useSearch } from "../contexts/SearchContext";
