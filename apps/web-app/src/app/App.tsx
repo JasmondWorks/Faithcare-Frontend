@@ -1,49 +1,42 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { SignIn } from "./pages/SignIn";
-import { LandingPage } from "./pages/LandingPage";
-import { SignUpChoice } from "./pages/SignUpChoice";
-import { OrganizationOnboarding } from "./pages/OrganizationOnboarding";
-import { IndividualOnboarding } from "./pages/IndividualOnboarding";
-import ForgotPassword from "./pages/ForgotPassword";
-import { Settings } from "./pages/Settings";
-import SignUpIndividual from "./pages/SignUpIndividual";
-import SignUpOrganization from "./pages/SignUpOrganization";
-import AppLayout from "./layouts/AppLayout";
-import Dashboard from "./pages/Dashboard";
-import OTPVerification from "./pages/OTPVerification";
-
-import { ChangePassword } from "./pages/ChangePassword";
-
-import { SundayJournal } from "./components/SundayJournal";
-import ScriptureLayout from "./pages/scripture/ScriptureLayout";
-import ScriptureToday from "./pages/scripture/ScriptureToday";
-import BibleReader from "./pages/scripture/BibleReader";
-import ReadingPlans from "./pages/scripture/ReadingPlans";
-import Bookmarks from "./pages/scripture/Bookmarks";
-import ScriptureHistory from "./pages/scripture/ScriptureHistory";
-import MemorizationDashboard from "./pages/memorization/MemorizationDashboard";
-import PracticeSession from "./pages/memorization/PracticeSession";
-import Collections from "./pages/memorization/Collections";
-import AddVerse from "./pages/memorization/AddVerse";
-import MemorizationProgress from "./pages/memorization/MemorizationProgress";
-import { PrayerRequests } from "./components/PrayerRequests";
-import { FocusTimer } from "./components/FocusTimer";
+import { Toaster } from "react-hot-toast";
+import { Routes, Route, BrowserRouter } from "react-router-dom";
+import { BulkMessaging } from "./components/BulkMessaging";
+import { Communities } from "./components/Communities";
 import { FirstTimersManagement } from "./components/FirstTimersManagement";
+import { FocusTimer } from "./components/FocusTimer";
 import { FollowUps } from "./components/FollowUps";
+import GuestRoute from "./components/GuestRoute";
+import { OTPVerification } from "./components/OTPVerification";
+import { PrayerRequests } from "./components/PrayerRequests";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { SalvationRecords } from "./components/SalvationRecords";
 import { SecondTimers } from "./components/SecondTimers";
-import { Communities } from "./components/Communities";
-import { BulkMessaging } from "./components/BulkMessaging";
-import { MessageTemplates } from "./pages/MessageTemplates";
-
+import { SundayJournal } from "./components/SundayJournal";
+import AppLayout from "./layouts/AppLayout";
 import AcceptInvite from "./pages/AcceptInvite";
-import Register from "./pages/Register";
-import AuthProvider from "./providers/AuthProvider";
-import { Toaster } from "react-hot-toast";
+import { ChangePassword } from "./pages/ChangePassword";
+import Dashboard from "./pages/Dashboard";
+import ForgotPassword from "./pages/ForgotPassword";
+import { IndividualOnboarding } from "./pages/IndividualOnboarding";
+import { LandingPage } from "./pages/LandingPage";
+import { MessageTemplates } from "./pages/MessageTemplates";
 import NotFoundPage from "./pages/NotFoundPage";
+import { OrganizationOnboarding } from "./pages/OrganizationOnboarding";
+import Register from "./pages/Register";
+import BibleReader from "./pages/scripture/BibleReader";
+import Bookmarks from "./pages/scripture/Bookmarks";
+import ReadingPlans from "./pages/scripture/ReadingPlans";
+import ScriptureHistory from "./pages/scripture/ScriptureHistory";
+import ScriptureLayout from "./pages/scripture/ScriptureLayout";
+import ScriptureToday from "./pages/scripture/ScriptureToday";
+import { SignIn } from "./pages/SignIn";
+import { SignUpChoice } from "./pages/SignUpChoice";
+import SignUpIndividual from "./pages/SignUpIndividual";
+import SignUpOrganization from "./pages/SignUpOrganization";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
-import GuestRoute from "./components/GuestRoute";
-import ProtectedRoute from "./components/ProtectedRoute";
+import AuthProvider from "./providers/AuthProvider";
+import { Settings } from "./pages/Settings";
+
 
 export default function App() {
   return (
