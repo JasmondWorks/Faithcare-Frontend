@@ -1,12 +1,8 @@
 import {
   Bell,
-  Search,
   Menu,
-  Command,
-  User,
   BookOpen,
   MessageSquare,
-  Settings,
   UserPlus,
   Heart,
   Sparkles,
@@ -17,8 +13,6 @@ import {
   Award,
   Users,
   ChevronRight,
-  X,
-  Loader2,
 } from "lucide-react";
 import { useLayout } from "../contexts/LayoutContext";
 import * as React from "react";
@@ -30,9 +24,10 @@ import { useAuth } from "../providers/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import { useSearch } from "../contexts/SearchContext";
 import { Button } from "@/components/ui/button";
+import { useFocusTimer } from "../contexts/FocusTimerContexts";
 
-// Icon mapping for notifications
-const iconMap: Record<string, any> = {
+
+const iconMap: Record<string, React.ElementType> = {
   Heart,
   MessageSquare,
   UserPlus,
@@ -46,20 +41,10 @@ const iconMap: Record<string, any> = {
 };
 
 import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "./ui/command";
-import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetDescription,
 } from "./ui/sheet";
 import { getCommunities, getFirstTimers, getPrayerRequests } from "@/api/organization/church";
 
@@ -67,6 +52,26 @@ interface HeaderProps {
   title: string;
   subtitle?: string;
 }
+
+interface SearchItem {
+  id?: string;
+  _id?: string;
+  fullName?: string;
+  name?: string;
+  description?: string;
+  request?: string;
+  title?: string;
+  content?: string;
+}
+
+interface SearchResults {
+  members: SearchItem[];
+  prayers: SearchItem[];
+  communities: SearchItem[];
+  journals: SearchItem[];
+}
+
+
 
 export function Header({ title, subtitle }: HeaderProps) {
   const {
@@ -77,7 +82,7 @@ export function Header({ title, subtitle }: HeaderProps) {
   } = useLayout();
   const { user } = useAuth();
   const { searchTerm, setSearchTerm } = useSearch();
-  const [open, setOpen] = React.useState(false);
+  const { timeLeft, totalDuration, isRunning, formatTime } = useFocusTimer();
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [showResults, setShowResults] = React.useState(false);
   const searchRef = React.useRef<HTMLDivElement>(null);
@@ -119,19 +124,24 @@ export function Header({ title, subtitle }: HeaderProps) {
     enabled: userType === "individual" && !!(user?.id),
   });
 
-  const extractDataArray = (response: any) => {
+  const extractDataArray = (response: unknown): SearchItem[] => {
     if (!response) return [];
-    if (Array.isArray(response.data)) return response.data;
-    if (response.data?.data && Array.isArray(response.data.data))
-      return response.data.data;
-    if (response.data?.entries && Array.isArray(response.data.entries))
-      return response.data.entries;
-    return Array.isArray(response) ? response : [];
+    if (Array.isArray(response)) return response as SearchItem[];
+    const obj = response as {
+      data?: SearchItem[] | { data?: SearchItem[]; entries?: SearchItem[] };
+    };
+    if (Array.isArray(obj.data)) return obj.data;
+    const inner = obj.data as
+      | { data?: SearchItem[]; entries?: SearchItem[] }
+      | undefined;
+    if (inner?.data && Array.isArray(inner.data)) return inner.data;
+    if (inner?.entries && Array.isArray(inner.entries)) return inner.entries;
+    return [];
   };
 
   const searchResults = React.useMemo(() => {
     if (!searchTerm || searchTerm.length < 2) return null;
-    const results: any = {
+    const results: SearchResults = {
       members: [],
       prayers: [],
       communities: [],
@@ -140,7 +150,7 @@ export function Header({ title, subtitle }: HeaderProps) {
 
     if (userType === "organization") {
       results.members = extractDataArray(firstTimersResponse)
-        .filter((m: any) =>
+        .filter((m) =>
           (m.fullName || m.name || "")
             .toLowerCase()
             .includes(searchTerm.toLowerCase()),
@@ -148,7 +158,7 @@ export function Header({ title, subtitle }: HeaderProps) {
         .slice(0, 3);
       results.prayers = extractDataArray(prayersResponse)
         .filter(
-          (p: any) =>
+          (p) =>
             (p.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
             (p.description || p.request || "")
               .toLowerCase()
@@ -156,20 +166,20 @@ export function Header({ title, subtitle }: HeaderProps) {
         )
         .slice(0, 3);
       results.communities = extractDataArray(communitiesResponse)
-        .filter((c: any) =>
+        .filter((c) =>
           (c.name || "").toLowerCase().includes(searchTerm.toLowerCase()),
         )
         .slice(0, 3);
     } else {
       results.journals = extractDataArray(journalsResponse)
         .filter(
-          (j: any) =>
+          (j) =>
             (j.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
             (j.content || "").toLowerCase().includes(searchTerm.toLowerCase()),
         )
         .slice(0, 3);
     }
-    return Object.values(results).some((arr: any) => arr.length > 0)
+    return Object.values(results).some((arr) => arr.length > 0)
       ? results
       : null;
   }, [
@@ -282,6 +292,20 @@ export function Header({ title, subtitle }: HeaderProps) {
             </div>
           </div> */}
 
+
+          {(isRunning || (timeLeft > 0 && timeLeft < totalDuration)) && (
+            <Button
+              variant="outline"
+              onClick={() => navigate("/focus-timer")}
+              className={`flex items-center gap-2 border-border/80 px-3 py-1.5 h-10 rounded-lg hover:bg-muted transition-all select-none ${isRunning
+                ? "text-accent bg-accent/5 border-accent/20 animate-pulse"
+                : "text-muted-foreground"
+                }`}
+            >
+              <Timer className={`w-4 h-4 ${isRunning ? "text-accent" : "text-muted-foreground"}`} />
+              <span className="text-sm font-semibold tabular-nums">{formatTime(timeLeft)}</span>
+            </Button>
+          )}
           <Button
             variant="outline"
             size="icon"
@@ -302,7 +326,7 @@ export function Header({ title, subtitle }: HeaderProps) {
       {showResults &&
         searchTerm.length >= 2 &&
         searchResults &&
-        Object.values(searchResults).some((arr: any) => arr?.length > 0) &&
+        Object.values(searchResults).some((arr) => arr?.length > 0) &&
         createPortal(
           <div
             style={{
@@ -323,7 +347,7 @@ export function Header({ title, subtitle }: HeaderProps) {
                       <UserPlus className="w-3.5 h-3.5" /> Members
                     </p>
                     <div className="space-y-1">
-                      {searchResults.members.map((m: any) => (
+                      {searchResults.members.map((m) => (
                         <Button
                           key={m.id || m._id}
                           variant="ghost"
@@ -349,7 +373,7 @@ export function Header({ title, subtitle }: HeaderProps) {
                       <Heart className="w-3.5 h-3.5" /> Prayer Requests
                     </p>
                     <div className="space-y-1">
-                      {searchResults.prayers.map((p: any) => (
+                      {searchResults.prayers.map((p) => (
                         <Button
                           key={p.id || p._id}
                           variant="ghost"
@@ -380,7 +404,7 @@ export function Header({ title, subtitle }: HeaderProps) {
                       <Users className="w-3.5 h-3.5" /> Communities
                     </p>
                     <div className="space-y-1">
-                      {searchResults.communities.map((c: any) => (
+                      {searchResults.communities.map((c) => (
                         <Button
                           key={c.id || c._id}
                           variant="ghost"
@@ -406,7 +430,7 @@ export function Header({ title, subtitle }: HeaderProps) {
                       <BookOpen className="w-3.5 h-3.5" /> Journal Entries
                     </p>
                     <div className="space-y-1">
-                      {searchResults.journals.map((j: any) => (
+                      {searchResults.journals.map((j) => (
                         <Button
                           key={j.id || j._id}
                           variant="ghost"

@@ -51,8 +51,8 @@ export function InviteAdmin() {
         const errorData = await response.json();
         toast.error(errorData.message || "Failed to send invite");
       }
-    } catch (error: any) {
-      toast.error(error.message || "An unexpected error occurred");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }

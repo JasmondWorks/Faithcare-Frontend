@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getFirstTimers,
-  createFollowUp,
-  updateFirstTimerStatus,
   getMyOrganization,
   regenerateOrganizationQrCode,
 } from "@/api/organization/church";
@@ -17,15 +15,21 @@ import FirstTimersTable from "./FirstTimersTable";
 import { Card } from "./ui/card";
 import { Button } from "@/components/ui/button";
 
-interface FirstTimer {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  prayerRequest: string;
-  status: string;
-  sunday: string;
-  visitType: string;
+/** Raw, loosely-typed first-timer row coming back from the API. */
+interface RawRecord {
+  id?: string;
+  _id?: string;
+  name?: string;
+  fullName?: string;
+  phone?: string;
+  phoneNumber?: string;
+  email?: string;
+  prayerRequest?: string;
+  status?: string;
+  serviceDate?: string;
+  createdAt?: string;
+  visitType?: string;
+  visit_type?: string;
 }
 
 /** Handles URL strings, data URIs, and raw base64. */
@@ -45,7 +49,9 @@ function QrPanel({ orgId }: { orgId: string }) {
     staleTime: 5 * 60_000,
   });
 
-  const org = (orgRaw?.data ?? orgRaw) as any;
+  const org = (orgRaw?.data ?? orgRaw) as
+    | { firstTimerQrCode?: string | null; id?: string; _id?: string }
+    | undefined;
   const qrSrc = resolveQrSrc(org?.firstTimerQrCode ?? "");
   const resolvedId = org?.id ?? org?._id ?? orgId;
 
@@ -55,7 +61,8 @@ function QrPanel({ orgId }: { orgId: string }) {
       toast.success("QR code regenerated.");
       queryClient.invalidateQueries({ queryKey: ["my-organization"] });
     },
-    onError: (e: any) => toast.error(e.message || "Failed to regenerate"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Failed to regenerate"),
   });
 
   const handleDownload = () => {
@@ -143,78 +150,26 @@ export function FirstTimersManagement() {
 
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { searchTerm, setSearchTerm } = useSearch();
+  const { searchTerm } = useSearch();
   const organizationId = user?.organizationId || "";
 
   // States for filters
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedSunday, setSelectedSunday] = useState<string | null>(null);
+  const [statusFilter] = useState<string>("all");
+  const [selectedSunday] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [page, setPage] = useState(1);
   const limit = 20;
 
-  // Status update mutation
-  const statusMutation = useMutation({
-    mutationFn: ({
-      id,
-      status,
-      notes,
-    }: {
-      id: string;
-      status: string;
-      notes: string;
-    }) => updateFirstTimerStatus(id, { status: status as any, notes }),
-    onSuccess: () => {
-      toast.success("Status updated");
-      queryClient.invalidateQueries({
-        queryKey: ["first-timers"],
-        exact: false,
-      });
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Update failed");
-    },
-  });
-
-  const followUpMutation = useMutation({
-    mutationFn: createFollowUp,
-    onSuccess: () => {
-      toast.success("Follow-up created successfully");
-      queryClient.invalidateQueries({ queryKey: ["follow-ups"], exact: false });
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to create follow-up");
-    },
-  });
-
-  const handleSendFollowUp = (person: FirstTimer) => {
-    followUpMutation.mutate({
-      targetId: person.id,
-      contactName: person.name,
-      contactPhone: person.phone,
-      targetType: "first_timer",
-      tags: ["FIRST_TIMER"],
-      priority: "HIGH" as const,
-      description: person.prayerRequest || "First-time visitor check-in",
-      dueDate: new Date().toISOString().split("T")[0],
-    });
-  };
-
-  const handleStatusChange = (id: string, newStatus: string) => {
-    statusMutation.mutate({
-      id,
-      status: newStatus,
-      notes: `Status changed to ${newStatus} from dashboard`,
-    });
-  };
-
-  const { data: firstTimersResponse, isLoading } = useQuery({
+  const { data: firstTimersResponse } = useQuery({
     queryKey: ["first-timers", organizationId, statusFilter, searchTerm, page],
     queryFn: () =>
       getFirstTimers({
         organizationId,
         visit_type: "first_time",
-        status: statusFilter === "all" ? undefined : (statusFilter as any),
+        status:
+          statusFilter === "all"
+            ? undefined
+            : (statusFilter as "PENDING" | "CONTACTED" | "FOLLOWED_UP"),
         search: searchTerm || undefined,
         page,
         limit,
@@ -223,14 +178,14 @@ export function FirstTimersManagement() {
   });
 
   // Helper to deeply find the first array in an object
-  const findArray = (obj: any): any[] => {
+  const findArray = (obj: unknown): RawRecord[] => {
     if (!obj) return [];
-    if (Array.isArray(obj)) return obj;
+    if (Array.isArray(obj)) return obj as RawRecord[];
     if (typeof obj === "object") {
-      for (const key in obj) {
-        if (Array.isArray(obj[key])) return obj[key];
-        if (typeof obj[key] === "object" && obj[key] !== null) {
-          const nested = findArray(obj[key]);
+      for (const value of Object.values(obj as Record<string, unknown>)) {
+        if (Array.isArray(value)) return value as RawRecord[];
+        if (typeof value === "object" && value !== null) {
+          const nested = findArray(value);
           if (nested.length > 0) return nested;
         }
       }
@@ -242,7 +197,7 @@ export function FirstTimersManagement() {
 
   // Keep firstTimersList for local filtering logic only
   const firstTimersList = firstTimersData
-    .map((ft: any) => ({
+    .map((ft: RawRecord) => ({
       id: ft.id || ft._id,
       name: ft.fullName || ft.name || "N/A",
       fullName: ft.fullName || ft.name || "N/A",
@@ -257,39 +212,8 @@ export function FirstTimersManagement() {
       visitType: ft.visitType || ft.visit_type || "first_time",
     }))
     .filter(
-      (ft: any) =>
-        ft.status !== "PROMOTED" &&
-        ft.visitType !== "second_time" &&
-        ft.visit_type !== "second_time",
+      (ft) => ft.status !== "PROMOTED" && ft.visitType !== "second_time",
     );
-
-  const getStatusColor = (status: string) => {
-    switch (status.toUpperCase()) {
-      case "PENDING":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "CONTACTED":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "FOLLOWED_UP":
-        return "bg-green-100 text-green-800 border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  const groupedBySunday = firstTimersList.reduce(
-    (acc: Record<string, FirstTimer[]>, person: FirstTimer) => {
-      if (!acc[person.sunday]) {
-        acc[person.sunday] = [];
-      }
-      acc[person.sunday].push(person);
-      return acc;
-    },
-    {} as Record<string, FirstTimer[]>,
-  );
-
-  const sundays = Object.keys(groupedBySunday).sort(
-    (a, b) => new Date(b).getTime() - new Date(a).getTime(),
-  );
 
   // Combine all local filters safely
   let displayedData = firstTimersList;
@@ -337,7 +261,10 @@ export function FirstTimersManagement() {
           <FirstTimersTable
             data={displayedData}
             currentPage={page}
-            totalPages={(firstTimersResponse as any)?.meta?.totalPages || 1}
+            totalPages={
+              (firstTimersResponse as { meta?: { totalPages?: number } })?.meta
+                ?.totalPages || 1
+            }
             onPageChange={setPage}
           />
         </div>

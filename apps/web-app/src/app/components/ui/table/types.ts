@@ -1,4 +1,4 @@
-export interface TableColumn<T = any> {
+export interface TableColumn<T = unknown> {
   key: string;
   label?: string;
   width?: string;
@@ -8,14 +8,14 @@ export interface TableColumn<T = any> {
   headerClassName?: string;
 }
 
-export interface TableAction<T = any> {
+export interface TableAction<T = unknown> {
   label: string;
   onClick: (item: T) => void;
   className?: string;
   condition?: (item: T) => boolean;
 }
 
-export interface TableProps<T = any> {
+export interface TableProps<T = unknown> {
   variant?: "default" | "minimal";
   data: T[];
   columns: TableColumn<T>[];
@@ -41,5 +41,5 @@ export interface TableProps<T = any> {
 
 export interface ItemWithId {
   id: string | number;
-  [key: string]: any; // Allow other properties
+  [key: string]: unknown; // Allow other properties
 }

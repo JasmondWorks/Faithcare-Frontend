@@ -31,9 +31,6 @@ export function Settings() {
 
   const userName = user?.name || `${userType} User`;
   const userEmail = user?.email || "faithcare";
-  const userRole =
-    user?.role ||
-    (userType === "organization" ? "Organization Admin" : "Individual User");
 
   return (
     <div className="space-y-6">

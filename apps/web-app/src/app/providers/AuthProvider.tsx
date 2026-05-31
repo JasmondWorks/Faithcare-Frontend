@@ -7,14 +7,24 @@ import { useQueryClient } from "@tanstack/react-query";
 import { setInMemoryToken } from "@/api/helper";
 import { LoadingScreen } from "../components/LoadingScreen";
 
+type JwtPayload = Record<string, unknown>;
+
+type InitializeSessionResult =
+  | { success: true; user: User; token: string }
+  | { success: false; error?: unknown };
+
 interface AuthContextType {
   user: User | null;
   userType: "individual" | "organization" | null;
   setUser: (user: User) => void;
-  initializeSession: (providedUser?: User, providedToken?: string) => Promise<any>;
+  initializeSession: (
+    providedUser?: User,
+    providedToken?: string,
+  ) => Promise<InitializeSessionResult>;
   isLoading: boolean;
   logout: () => Promise<void>;
 }
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 type User = {
@@ -30,7 +40,8 @@ type User = {
   organizationId: string | null,
   pendingOrganizationId: string | null,
   createdAt: string,
-  sub?: string
+  sub?: string,
+  organizationName?: string
 }
 
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -39,7 +50,9 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const queryClient = useQueryClient();
 
   // Helper to determine userType
-  const determineUserType = (userData: any): "individual" | "organization" => {
+  const determineUserType = (
+    userData: User | null,
+  ): "individual" | "organization" => {
     if (
       userData?.organizationId ||
       userData?.role === "ADMIN" ||
@@ -51,7 +64,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return "individual";
   };
 
-  const decodeJWT = (token: string) => {
+  const decodeJWT = (token: string): JwtPayload | null => {
     try {
       const base64Url = token.split(".")[1];
       const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
@@ -69,12 +82,28 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const initializeSession = async (providedUser?: any, providedToken?: string) => {
+  // Strip standard JWT registered claims, keeping only user-related fields.
+  const stripJwtClaims = (payload: JwtPayload): JwtPayload => {
+    const { iat, exp, nbf, jti, ...rest } = payload;
+    void iat;
+    void exp;
+    void nbf;
+    void jti;
+    return rest;
+  };
+
+  const initializeSession = async (
+    providedUser?: User,
+    providedToken?: string,
+  ): Promise<InitializeSessionResult> => {
     try {
       if (providedUser && providedToken) {
         const decoded = decodeJWT(providedToken);
-        const { iat, exp, nbf, jti, ...cleanPayload } = decoded || {};
-        const mergedUser = { ...cleanPayload, ...(providedUser || {}) };
+        const cleanPayload = stripJwtClaims(decoded || {});
+        const mergedUser = {
+          ...cleanPayload,
+          ...(providedUser || {}),
+        } as User;
 
         setInMemoryToken(providedToken);
         setUser(mergedUser);
@@ -87,19 +116,21 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // refreshToken() returns { success, data: <server body> } where the server
       // body is { success, accessToken, refreshToken, user }.
-      const raw = result.data as any;
+      const raw = result.data as
+        | { accessToken?: string; data?: { accessToken?: string } }
+        | undefined;
       const token: string | undefined = raw?.accessToken ?? raw?.data?.accessToken;
 
       if (result.success && token) {
         // Derive the user from the JWT payload only — the refresh response
         // carries no user object, only the new access token.
         const decoded = decodeJWT(token);
-        const { iat, exp, nbf, jti, ...cleanPayload } = decoded || {};
+        const cleanPayload = stripJwtClaims(decoded || {});
 
         setInMemoryToken(token);
-        setUser(cleanPayload);
+        setUser(cleanPayload as User);
         queryClient.clear();
-        return { success: true, user: cleanPayload, token };
+        return { success: true, user: cleanPayload as User, token };
       } else {
         setInMemoryToken(null);
         setUser(null);
@@ -149,6 +180,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

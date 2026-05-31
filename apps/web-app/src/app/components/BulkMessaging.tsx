@@ -10,6 +10,15 @@ import { getFollowUps, sendBulkMessage } from "@/api/organization/church";
 import { useAuth } from "../providers/AuthProvider";
 import { toast } from "react-hot-toast";
 
+interface FollowUpItem {
+  id?: string;
+  _id?: string;
+  name?: string;
+  phone?: string;
+  phoneNumber?: string;
+  status?: string;
+}
+
 export function BulkMessaging() {
   const { setHeader } = useLayout();
   const navigate = useNavigate();
@@ -31,20 +40,27 @@ export function BulkMessaging() {
   });
 
   // Helper to robustly find the data array
-  const followUps = (() => {
-    const r = followUpsResponse as any;
+  const followUps: FollowUpItem[] = (() => {
+    const r = followUpsResponse as
+      | Record<string, unknown>
+      | FollowUpItem[]
+      | null
+      | undefined;
     if (!r) return [];
     if (Array.isArray(r)) return r;
-    if (Array.isArray(r.data)) return r.data;
-    if (r.data && Array.isArray(r.data.data)) return r.data.data;
-    if (r.data && Array.isArray(r.data.followUps)) return r.data.followUps;
+    if (Array.isArray(r.data)) return r.data as FollowUpItem[];
+    if (r.data && Array.isArray((r.data as Record<string, unknown>).data))
+      return (r.data as Record<string, unknown>).data as FollowUpItem[];
+    if (r.data && Array.isArray((r.data as Record<string, unknown>).followUps))
+      return (r.data as Record<string, unknown>).followUps as FollowUpItem[];
 
-    const findArray = (obj: any): any[] => {
+    const findArray = (obj: unknown): FollowUpItem[] => {
       if (!obj || typeof obj !== "object") return [];
-      for (const key in obj) {
-        if (Array.isArray(obj[key])) return obj[key];
-        if (typeof obj[key] === "object" && obj[key] !== null) {
-          const nested = findArray(obj[key]);
+      const record = obj as Record<string, unknown>;
+      for (const key in record) {
+        if (Array.isArray(record[key])) return record[key] as FollowUpItem[];
+        if (typeof record[key] === "object" && record[key] !== null) {
+          const nested = findArray(record[key]);
           if (nested.length > 0) return nested;
         }
       }
@@ -53,12 +69,12 @@ export function BulkMessaging() {
     return findArray(r);
   })();
 
-  const pendingFollowUps = followUps.filter((f: any) => f.status?.toUpperCase() !== "COMPLETED");
+  const pendingFollowUps = followUps.filter((f: FollowUpItem) => f.status?.toUpperCase() !== "COMPLETED");
 
   // Initialize selected recipients when data loads
   useEffect(() => {
     if (pendingFollowUps.length > 0 && selectedRecipientIds.length === 0) {
-      setSelectedRecipientIds(pendingFollowUps.map((f: any) => f.id || f._id));
+      setSelectedRecipientIds(pendingFollowUps.map((f: FollowUpItem) => f.id || f._id || ""));
     }
   }, [pendingFollowUps.length]);
 
@@ -77,8 +93,8 @@ export function BulkMessaging() {
         toast.error(res.error || "Failed to send messages");
       }
     },
-    onError: (err: any) => {
-      toast.error(err.message || "An error occurred");
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "An error occurred");
     }
   });
 
@@ -92,7 +108,7 @@ export function BulkMessaging() {
     if (selectedRecipientIds.length === pendingFollowUps.length) {
       setSelectedRecipientIds([]);
     } else {
-      setSelectedRecipientIds(pendingFollowUps.map((f: any) => f.id || f._id));
+      setSelectedRecipientIds(pendingFollowUps.map((f: FollowUpItem) => f.id || f._id || ""));
     }
   };
 
@@ -113,7 +129,7 @@ export function BulkMessaging() {
         </div>
         <h3 className="text-xl font-bold">Failed to load data</h3>
         <p className="text-muted-foreground text-center max-w-md">
-          {(error as any)?.message || "There was an error connecting to the server. Please try again."}
+          {(error instanceof Error ? error.message : "") || "There was an error connecting to the server. Please try again."}
         </p>
         <Button onClick={() => window.location.reload()} variant="outline">
           Retry Connection
@@ -220,8 +236,8 @@ export function BulkMessaging() {
                   <p className="text-muted-foreground text-sm">No pending follow-ups found.</p>
                 </div>
               ) : (
-                pendingFollowUps.map((f: any) => {
-                  const id = f.id || f._id;
+                pendingFollowUps.map((f: FollowUpItem) => {
+                  const id = f.id || f._id || "";
                   const isSelected = selectedRecipientIds.includes(id);
                   return (
                     <div

@@ -1,5 +1,5 @@
 ﻿import { useState } from "react";
-import { Loader2, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { changePassword } from "@/api/auth/auth";
 import ErrorMessage from "./ui/error-message";

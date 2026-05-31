@@ -27,7 +27,6 @@ import { Card } from "../../components/ui/card";
 import { VerseList } from "../../components/scripture/VerseList";
 import { ReflectionPanel } from "../../components/scripture/ReflectionPanel";
 import { AudioPlayer } from "../../components/scripture/AudioPlayer";
-import { BookmarkActionSheet } from "../../components/scripture/BookmarkActionSheet";
 import { cn } from "@/lib/utils";
 
 const TRANSLATION_KEY = "scripture_translation_id";
@@ -204,7 +203,7 @@ export default function BibleReader() {
     );
 
     if (existing) {
-      removeBM.mutate(existing.id || (existing as any)._id);
+      removeBM.mutate(existing.id || (existing as { _id?: string })._id || "");
     } else {
       addBM.mutate({
         bibleId: translationId,

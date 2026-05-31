@@ -1,5 +1,6 @@
 import { CheckIcon, ChevronDown, MinusIcon } from "lucide-react";
 import { Link } from "react-router-dom";
+import type * as React from "react";
 import { useEffect, useState } from "react";
 import type { TableColumn, TableProps } from "./types";
 import { cn } from "@/app/components/ui/utils";
@@ -53,7 +54,11 @@ const Table = <T extends { id: string | number }>(props: TableProps<T>) => {
 
   const handleSelectItem = (id: string | number) => {
     const next = new Set(selectedItems);
-    next.has(id) ? next.delete(id) : next.add(id);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
     setSelectedItems(next);
   };
 
@@ -71,8 +76,11 @@ const Table = <T extends { id: string | number }>(props: TableProps<T>) => {
     if (column.render) return column.render(item, index);
     const value = column.key
       .split(".")
-      .reduce((obj: any, key) => obj?.[key], item);
-    return value ?? "N/A";
+      .reduce<unknown>(
+        (obj, key) => (obj as Record<string, unknown>)?.[key],
+        item,
+      );
+    return (value as React.ReactNode) ?? "N/A";
   };
 
   if (loading) {
@@ -291,8 +299,11 @@ const TableVariant = <T extends { id: string | number }>(
     if (column.render) return column.render(item, index);
     const value = column.key
       .split(".")
-      .reduce((obj: any, key) => obj?.[key], item);
-    return value ?? "N/A";
+      .reduce<unknown>(
+        (obj, key) => (obj as Record<string, unknown>)?.[key],
+        item,
+      );
+    return (value as React.ReactNode) ?? "N/A";
   };
 
   return (

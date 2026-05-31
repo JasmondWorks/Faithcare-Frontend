@@ -17,6 +17,18 @@ import { Card } from "./ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import AppPagination from "./ui/AppPagination";
+import type { PrayerRequestStatus } from "@/api/shared/types";
+
+/** Loosely-typed prayer-request row from the API. */
+interface PrayerRow {
+  id?: string;
+  _id?: string;
+  name?: string;
+  description?: string;
+  request?: string;
+  status?: string;
+  createdAt?: string;
+}
 
 export function PrayerRequests() {
   const { setHeader } = useLayout();
@@ -40,13 +52,17 @@ export function PrayerRequests() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
-      updatePrayerRequest(organizationId, id, { status: status as any }),
+      updatePrayerRequest(organizationId, id, {
+        status: status as PrayerRequestStatus,
+      }),
     onSuccess: () => {
       toast.success("Prayer status updated");
       queryClient.invalidateQueries({ queryKey: ["prayer-requests"] });
     },
-    onError: (error: any) =>
-      toast.error(error.message || "Failed to update status"),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update status",
+      ),
   });
 
   const deleteMutation = useMutation({
@@ -55,14 +71,20 @@ export function PrayerRequests() {
       toast.success("Prayer request removed");
       queryClient.invalidateQueries({ queryKey: ["prayer-requests"] });
     },
-    onError: (error: any) =>
-      toast.error(error.message || "Failed to delete request"),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete request",
+      ),
   });
 
-  const _pr = (prayerResponse?.data || []) as any;
-  const prayerRequests = Array.isArray(_pr) ? _pr : Array.isArray(_pr?.data) ? _pr.data : [];
+  const _pr: unknown = prayerResponse?.data || [];
+  const prayerRequests: PrayerRow[] = Array.isArray(_pr)
+    ? (_pr as PrayerRow[])
+    : Array.isArray((_pr as { data?: unknown })?.data)
+      ? ((_pr as { data: PrayerRow[] }).data)
+      : [];
 
-  const filteredRequests = prayerRequests.filter((prayer: any) => {
+  const filteredRequests = prayerRequests.filter((prayer) => {
     if (!searchTerm) return true;
     const lowerSearch = searchTerm.toLowerCase();
     return (
@@ -144,7 +166,7 @@ export function PrayerRequests() {
               </p>
             </Card>
           ) : (
-            filteredRequests.map((prayer: any) => (
+            filteredRequests.map((prayer) => (
               <Card
                 key={prayer.id || prayer._id}
                 padding="none"
@@ -248,11 +270,11 @@ export function PrayerRequests() {
           )}
         </div>
 
-        {prayerResponse && (prayerResponse as any).meta && (
+        {prayerResponse?.meta && (
           <div className="mt-6 rounded-2xl overflow-hidden border border-border">
             <AppPagination
               currentPage={page}
-              totalPages={(prayerResponse as any).meta.totalPages || 1}
+              totalPages={prayerResponse.meta.totalPages || 1}
               onPageChange={setPage}
             />
           </div>

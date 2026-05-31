@@ -25,8 +25,8 @@ export async function getTodayScriptureAuth(translationId?: string): Promise<Api
     const json = await res.json();
     if (!res.ok) throw new Error(json.message || "Failed to fetch today's scripture");
     return { success: true, data: (json?.data ?? json) as TodayResponse };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 

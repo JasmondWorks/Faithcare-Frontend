@@ -19,10 +19,10 @@ import {
   createPrayerRequest,
   createFollowUp,
 } from "@/api/organization/church";
+import type { RegisterFirstTimerRequest } from "@/api/organization/types";
 import { useAuth } from "../providers/AuthProvider";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
 
 // common local formats with optional spaces/dashes (min 7 digits stripped).
 const phoneRegex = /^\+?[1-9]\d{6,14}$/;
@@ -82,6 +82,21 @@ interface AddMemberModalProps {
   onSuccess: () => void;
 }
 
+interface MemberFormValues {
+  name: string;
+  email?: string;
+  phoneNumber: string;
+  visitType?: "first_time" | "second_time";
+  prayerRequest?: string;
+  serviceDate?: string;
+  dateOfDecision?: string;
+  notes?: string;
+  request?: string;
+  priority?: "HIGH" | "MEDIUM" | "LOW";
+  description?: string;
+  dueDate?: string;
+}
+
 // â”€â”€ Shared field styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const labelCls =
@@ -120,7 +135,7 @@ export function AddMemberModal({
   const today = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
-  const form = useForm<any>({
+  const form = useForm<MemberFormValues>({
     resolver: zodResolver(getSchema()),
     defaultValues: {
       name: "",
@@ -138,7 +153,7 @@ export function AddMemberModal({
     },
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: MemberFormValues) => {
     setIsLoading(true);
     try {
       let res;
@@ -155,7 +170,7 @@ export function AddMemberModal({
             serviceDate: data.serviceDate,
             qrToken: "",  // manual entry — no QR token
           };
-          res = await createFirstTimer(payload as any);
+          res = await createFirstTimer(payload as RegisterFirstTimerRequest);
 
           // If a prayer request was entered, also create it on the Prayer Requests page
           if (res?.success && data.prayerRequest?.trim()) {
@@ -209,7 +224,7 @@ export function AddMemberModal({
         onClose();
         form.reset();
       } else {
-        toast.error((res as any)?.error || "Failed to add record");
+        toast.error(res?.error || "Failed to add record");
       }
     } catch {
       toast.error("An error occurred");

@@ -1,11 +1,8 @@
 import React, { useState } from "react";
 import {
-  Sparkles,
   ArrowRight,
-  User,
   MapPin,
   Check,
-  Loader2,
   Building2,
   LogOut,
 } from "lucide-react";
@@ -20,15 +17,12 @@ import {
 import { useAuth } from "../providers/AuthProvider";
 import { toast } from "react-hot-toast";
 import Logo from "../components/Logo";
-import SearchableSelect from "../components/ui/SearchableSelect";
 import { useForm } from "react-hook-form";
 import { Form } from "../components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoadingScreen } from "../components/LoadingScreen";
 import { InputField } from "../components/ui/InputField";
 import { Button } from "@/components/ui/button";
 import z from "zod";
-import { getOrganizationBySlug } from "@/api/organization/church";
 
 const individualOnboardingSchema = z.object({
   location: z.string().min(1, "Location is required"),
@@ -51,15 +45,11 @@ const goalOptions = [
 ];
 
 export function IndividualOnboarding() {
-  const { user, logout, initializeSession, isLoading: isAuthLoading } = useAuth();
+  const { user, logout, initializeSession } = useAuth();
   const userId = user?.sub || user?.id;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [isSearchingChurch, setIsSearchingChurch] = useState(false);
-  const [churchOptions, setChurchOptions] = useState<
-    { id: string; name: string }[]
-  >([]);
 
   const form = useForm<IndividualOnboardingValues>({
     resolver: zodResolver(individualOnboardingSchema),
@@ -73,29 +63,6 @@ export function IndividualOnboarding() {
   const handleSignOut = async () => {
     await logout();
     navigate("/sign-in");
-  };
-
-  const handleChurchSearch = async (searchTerm: string) => {
-    if (!searchTerm || searchTerm.length < 2) {
-      setChurchOptions([]);
-      return;
-    }
-
-    setIsSearchingChurch(true);
-    const slug = searchTerm
-      .toLowerCase()
-      .replace(/ /g, "-")
-      .replace(/[^\w-]+/g, "");
-
-    const res = await getOrganizationBySlug(slug);
-    if (res.success && Array.isArray(res.data)) {
-      setChurchOptions(res.data);
-    } else if (res.success && res.data) {
-      setChurchOptions([res.data]);
-    } else {
-      setChurchOptions([]);
-    }
-    setIsSearchingChurch(false);
   };
 
   const onSubmit = async (data: IndividualOnboardingValues) => {
@@ -130,7 +97,11 @@ export function IndividualOnboarding() {
       const existingRes = await getMetadataByUserId(userId);
       let res;
 
-      const existingData = existingRes.data as any;
+      const existingData = existingRes.data as
+        | { _id?: string; id?: string }
+        | { _id?: string; id?: string }[]
+        | null
+        | undefined;
       const metadata = Array.isArray(existingData)
         ? existingData[0]
         : existingData;
@@ -154,7 +125,7 @@ export function IndividualOnboarding() {
       } else {
         toast.error(res.error || "Failed to complete setup");
       }
-    } catch (err: any) {
+    } catch (err) {
       toast.error("An unexpected error occurred");
       console.error(err);
     } finally {

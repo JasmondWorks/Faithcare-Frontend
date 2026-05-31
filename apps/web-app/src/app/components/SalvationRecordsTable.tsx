@@ -13,20 +13,30 @@ import {
 import { ListFilter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function SalvationRecordsTable({ 
+interface SalvationRecordRow {
+  id: string | number;
+  phone?: string;
+  email?: string | null;
+  firstVisit?: string;
+  secondVisit?: string;
+  prayerRequest?: string;
+  status?: string;
+}
+
+export default function SalvationRecordsTable({
   data,
   currentPage = 1,
   totalPages = 1,
   onPageChange,
-}: { 
-  data: any[];
+}: {
+  data: SalvationRecordRow[];
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
 }) {
   const { searchTerm, setSearchTerm } = useSearch();
 
-  const columns: TableColumn[] = [
+  const columns: TableColumn<SalvationRecordRow>[] = [
     {
       key: "name",
       label: "Name",

@@ -1,5 +1,17 @@
 import React, { createContext, useContext, useState } from "react";
 
+interface AppNotification {
+  id: string;
+  title: string;
+  status: string;
+  icon?: string;
+  bg?: string;
+  color?: string;
+  time?: string;
+  description?: string;
+  type?: string;
+}
+
 interface LayoutContextType {
   title: string;
   subtitle?: string;
@@ -7,8 +19,8 @@ interface LayoutContextType {
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
   closeSidebar: () => void;
-  notifications: any[];
-  addNotification: (notification: any) => void;
+  notifications: AppNotification[];
+  addNotification: (notification: Omit<AppNotification, "id" | "status">) => void;
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
 }
@@ -21,7 +33,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     "Welcome back",
   );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>(() => {
+  const [notifications, setNotifications] = useState<AppNotification[]>(() => {
     const saved = localStorage.getItem("app_notifications");
     return saved ? JSON.parse(saved) : [];
   });
@@ -65,18 +77,19 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const closeSidebar = () => setIsSidebarOpen(false);
 
-  const addNotification = (n: any) => {
+  const addNotification = (n: Omit<AppNotification, "id" | "status">) => {
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setNotifications((prev) => {
       // Prevent duplicates of the same type of streak message on the same day
       const isDuplicate = prev.some(
         (existing) =>
           existing.title === n.title &&
-          new Date(existing.id.split("-")[0] * 1).toDateString() ===
+          new Date(Number(existing.id.split("-")[0])).toDateString() ===
             new Date().toDateString(),
       );
       if (isDuplicate) return prev;
-      return [{ ...n, id, status: "unread" }, ...prev];
+      const newNotification: AppNotification = { ...n, id, status: "unread" };
+      return [newNotification, ...prev];
     });
   };
 
@@ -110,6 +123,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useLayout() {
   const context = useContext(LayoutContext);
   if (context === undefined) {

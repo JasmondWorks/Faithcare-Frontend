@@ -162,7 +162,7 @@ function RegistrationForm({
       return;
     }
 
-    if ((result as any).expired) {
+    if ((result as { expired?: boolean }).expired) {
       setIsExpiredMidSession(true);
     } else {
       setSubmitError(result.error ?? "Registration failed. Please try again.");
@@ -405,7 +405,7 @@ export default function Register() {
       if (result.success && result.data) {
         setOrg(result.data);
         setState("form");
-      } else if ((result as any).expired) {
+      } else if ((result as { expired?: boolean }).expired) {
         setState("expired");
       } else {
         setState("invalid");

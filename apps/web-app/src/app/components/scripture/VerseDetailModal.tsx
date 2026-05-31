@@ -53,7 +53,7 @@ export function VerseDetailModal({
       } else {
         toast.error(res.error || "Failed to save notes");
       }
-    } catch (err) {
+    } catch {
       toast.error("An error occurred while saving notes");
     } finally {
       setIsSaving(false);
@@ -67,7 +67,16 @@ export function VerseDetailModal({
     staleTime: 2 * 60_000,
   });
 
-  const userReadingPlanId = (entry as any).userReadingPlanId || (entry as any).userReadingPlan?.id || (entry as any).userReadingPlan;
+  const entryWithPlan = entry as UserDailyScripture & {
+    userReadingPlanId?: string;
+    userReadingPlan?: string | { id?: string };
+  };
+  const userReadingPlanId =
+    entryWithPlan.userReadingPlanId ||
+    (typeof entryWithPlan.userReadingPlan === "object"
+      ? entryWithPlan.userReadingPlan?.id
+      : undefined) ||
+    entryWithPlan.userReadingPlan;
   
   // Find associated plan by ID or by planName/title matching (to support legacy duplicate plans)
   const associatedPlan = allPlansRes?.data?.find(
@@ -92,7 +101,7 @@ export function VerseDetailModal({
       } else {
         toast.error(res.error || "Failed to resume plan");
       }
-    } catch (err) {
+    } catch {
       toast.error("An error occurred while resuming plan");
     } finally {
       setIsSaving(false);

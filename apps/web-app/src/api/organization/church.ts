@@ -85,8 +85,8 @@ export async function updateFirstTimerVisitType(
     await updateFirstTimerStatus(id, { status: "PROMOTED", notes: "Promoted to second timer" });
     await deleteFirstTimer(organizationId, id);
     return { success: true };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -101,8 +101,8 @@ export async function deleteFirstTimer(organizationId: string, id: string) {
       if (res.ok) return { success: true };
     }
     throw new Error("Deletion failed across all known paths");
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -168,6 +168,7 @@ export function getOrganizationBySlug(slug: string): Promise<ApiResponse<Organiz
 
 // ── Communities ───────────────────────────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getCommunities(organizationId: string): Promise<ApiResponse<Community[]>> {
   return apiGet<Community[]>(`/church/communities`);
 }
@@ -186,7 +187,16 @@ export function deleteCommunity(organizationId: string, id: string): Promise<Api
 
 // ── Prayer requests ───────────────────────────────────────────────────────────
 
-export function createPrayerRequest(organizationId: string, payload: any): Promise<ApiResponse<any>> {
+export function createPrayerRequest(
+  organizationId: string,
+  payload: {
+    name: string;
+    phoneNumber: string;
+    email?: string;
+    request: string;
+    priority: string;
+  },
+): Promise<ApiResponse<unknown>> {
   return apiPost(`/church/prayer-requests`, payload);
 }
 
@@ -241,8 +251,8 @@ export async function bulkUploadMembers(organizationId: string, type: string, fi
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Bulk upload failed");
     return { success: true, data: data?.data };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -255,8 +265,8 @@ export async function verifyQrToken(payload: VerifyQrCodeRequest): Promise<ApiRe
     const data = await res.json();
     if (!res.ok) return { success: false, error: data.message };
     return data;
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -272,7 +282,7 @@ export async function registerFirstTimerPublic(payload: RegisterFirstTimerReques
     if (res.status === 401) return { success: false, error: data.message };
     if (!res.ok) return { success: false, error: data.message || "Registration failed." };
     return { success: true, data: data.data };
-  } catch (e: any) {
+  } catch {
     return { success: false, error: "Registration failed. Please check your connection and try again." };
   }
 }
@@ -304,6 +314,6 @@ export function deleteMessageTemplate(id: string): Promise<ApiResponse<void>> {
 export function sendBulkMessage(
   organizationId: string,
   payload: { platform: "whatsapp" | "sms"; content: string; recipientIds: string[] },
-): Promise<ApiResponse<any>> {
+): Promise<ApiResponse<unknown>> {
   return apiPost(`/church/messages/bulk`, payload);
 }

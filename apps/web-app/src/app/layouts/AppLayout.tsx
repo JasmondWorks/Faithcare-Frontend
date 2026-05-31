@@ -4,8 +4,8 @@ import { Sidebar } from "../components/Sidebar";
 import { Header } from "../components/Header";
 import { LayoutProvider, useLayout } from "../contexts/LayoutContext";
 import { SearchProvider } from "../contexts/SearchContext";
-import ProtectedRoute from "../components/ProtectedRoute";
 import { useAuth } from "../providers/AuthProvider";
+import { FocusTimerProvider } from "../contexts/FocusTimerContexts";
 
 function LayoutShell() {
   const { isSidebarOpen, closeSidebar, title, subtitle } = useLayout();
@@ -16,7 +16,7 @@ function LayoutShell() {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, []);
 
-  const { user, userType } = useAuth();
+  const { userType } = useAuth();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -56,20 +56,15 @@ function LayoutShell() {
   );
 }
 
-/**
- * AppLayout combines two separate concerns:
- *   1. ProtectedRoute  â€” authentication + role-based access guard
- *   2. LayoutShell     â€” sidebar, topbar, and content area
- *
- * Providers are initialised only after authentication passes, so
- * LayoutContext and SearchContext are never set up for unauthenticated renders.
- */
+
 export default function AppLayout() {
   return (
     <LayoutProvider>
-      <SearchProvider>
-        <LayoutShell />
-      </SearchProvider>
+      <FocusTimerProvider>
+        <SearchProvider>
+          <LayoutShell />
+        </SearchProvider>
+      </FocusTimerProvider>
     </LayoutProvider>
   );
 }
