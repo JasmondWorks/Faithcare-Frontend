@@ -8,7 +8,6 @@ import {
   RotateCcw,
   CalendarDays,
   X,
-  Loader2,
   AlertTriangle,
   CheckCircle2,
   BookOpen,
@@ -188,7 +187,7 @@ export default function ReadingPlans() {
       setSelectedPlan(null);
       navigate("/scripture");
     },
-    onError: (e: any) => toast.error(e.message || "Failed to start plan"),
+    onError: (e: Error) => toast.error(e.message || "Failed to start plan"),
   });
 
   const pauseMutation = useMutation({
@@ -227,7 +226,11 @@ export default function ReadingPlans() {
   const toggleDescription = (id: string) => {
     setExpandedDescriptions((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };

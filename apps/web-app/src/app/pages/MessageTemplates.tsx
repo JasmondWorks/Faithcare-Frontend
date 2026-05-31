@@ -38,6 +38,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
+import type {
+  CreateMessageTemplateRequest,
+  UpdateMessageTemplateRequest,
+} from "@/api/organization/types";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -572,7 +576,7 @@ export function MessageTemplates() {
       const result = await createMessageTemplate({
         ...values,
         variables: extractVariables(values.body),
-      } as any);
+      } as unknown as CreateMessageTemplateRequest);
       if (!result.success) throw new Error(result.error || "Failed to create template");
       return result;
     },
@@ -582,14 +586,17 @@ export function MessageTemplates() {
       setModalOpen(false);
       setPrefill(null);
     },
-    onError: (e: any) => toast.error(e.message || "Failed to create template"),
+    onError: (e: Error) => toast.error(e.message || "Failed to create template"),
   });
 
   const updateMutation = useMutation({
     mutationFn: async (values: FormValues) => {
       const result = await updateMessageTemplate(
         editing?.id ?? editing?._id ?? "",
-        { ...values, variables: extractVariables(values.body) } as any,
+        {
+          ...values,
+          variables: extractVariables(values.body),
+        } as unknown as UpdateMessageTemplateRequest,
       );
       if (!result.success) throw new Error(result.error || "Failed to update template");
       return result;
@@ -600,7 +607,7 @@ export function MessageTemplates() {
       setModalOpen(false);
       setEditing(null);
     },
-    onError: (e: any) => toast.error(e.message || "Failed to update template"),
+    onError: (e: Error) => toast.error(e.message || "Failed to update template"),
   });
 
   const deleteMutation = useMutation({
@@ -614,7 +621,7 @@ export function MessageTemplates() {
       queryClient.invalidateQueries({ queryKey: ["message-templates"] });
       setDeletingId(null);
     },
-    onError: (e: any) => toast.error(e.message || "Failed to delete template"),
+    onError: (e: Error) => toast.error(e.message || "Failed to delete template"),
   });
 
   const handleSubmit = (values: FormValues) => {

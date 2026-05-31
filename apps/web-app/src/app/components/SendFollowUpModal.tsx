@@ -21,6 +21,15 @@ export interface FollowUpTemplate {
   body: string;
 }
 
+interface RawTemplate {
+  id?: string;
+  _id?: string;
+  name: string;
+  body?: string;
+  message?: string;
+  isActive?: boolean;
+}
+
 const TEMPLATES: FollowUpTemplate[] = [
   {
     id: "welcome",
@@ -99,8 +108,12 @@ export function SendFollowUpModal({
 
   // Merge org templates + presets, deduplicated by id, active only
   const apiTemplates: FollowUpTemplate[] = (() => {
-    const orgList: any[] = Array.isArray(orgData?.data) ? orgData.data : [];
-    const presetList: any[] = Array.isArray(presetData?.data) ? presetData.data : [];
+    const orgList: RawTemplate[] = Array.isArray(orgData?.data)
+      ? orgData.data
+      : [];
+    const presetList: RawTemplate[] = Array.isArray(presetData?.data)
+      ? presetData.data
+      : [];
     const merged = [...orgList, ...presetList];
     const seen = new Set<string>();
     return merged

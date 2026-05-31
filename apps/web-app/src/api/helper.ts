@@ -54,10 +54,9 @@ export async function apiRequest(
     credentials: "include", // Ensure cookies are sent with all requests
   };
 
-  try {
-    const response = await fetch(url, config);
+  const response = await fetch(url, config);
 
-    if (response.status === 401) {
+  if (response.status === 401) {
       if (!isRefreshing) {
         isRefreshing = true;
         try {
@@ -96,7 +95,7 @@ export async function apiRequest(
             // or AuthProvider will pick up the 401 via some other means
             return response;
           }
-        } catch (error) {
+        } catch {
           isRefreshing = false;
           return response;
         }
@@ -112,12 +111,9 @@ export async function apiRequest(
           resolve(fetch(url, { ...config, headers: retryHeaders }));
         });
       });
-    }
-
-    return response;
-  } catch (error) {
-    throw error;
   }
+
+  return response;
 }
 
 // ── Typed CRUD helpers ────────────────────────────────────────────────────────
@@ -125,11 +121,11 @@ export async function apiRequest(
 // the standard { data: ... } envelope, and return ApiResponse<T>.
 // Import these in any API module instead of repeating the same boilerplate.
 
-function unwrapEnvelope<T>(json: any): T {
+function unwrapEnvelope<T>(json: unknown): T {
   // Use `in` instead of `??` so that an explicit `data: null` is returned as
   // null rather than falling through to the whole response object.
   if (json !== null && typeof json === "object" && "data" in json) {
-    return json.data as T;
+    return (json as { data: T }).data;
   }
   return json as T;
 }
@@ -140,8 +136,8 @@ export async function apiGet<T>(path: string, params?: Record<string, string>): 
     const json = await res.json();
     if (!res.ok) throw new Error(json.message || `Request failed: GET ${path}`);
     return { success: true, data: unwrapEnvelope<T>(json), meta: json.meta };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -151,8 +147,8 @@ export async function apiPost<T>(path: string, body: object): Promise<ApiRespons
     const json = await res.json();
     if (!res.ok) throw new Error(json.message || `Request failed: POST ${path}`);
     return { success: true, data: unwrapEnvelope<T>(json), meta: json.meta };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -165,8 +161,8 @@ export async function apiPatch<T>(path: string, body?: object): Promise<ApiRespo
     const json = await res.json();
     if (!res.ok) throw new Error(json.message || `Request failed: PATCH ${path}`);
     return { success: true, data: unwrapEnvelope<T>(json), meta: json.meta };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -176,8 +172,8 @@ export async function apiPut<T>(path: string, body: object): Promise<ApiResponse
     const json = await res.json();
     if (!res.ok) throw new Error(json.message || `Request failed: PUT ${path}`);
     return { success: true, data: unwrapEnvelope<T>(json), meta: json.meta };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -189,7 +185,7 @@ export async function apiDelete(path: string): Promise<ApiResponse<void>> {
       throw new Error(json.message || `Request failed: DELETE ${path}`);
     }
     return { success: true };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }

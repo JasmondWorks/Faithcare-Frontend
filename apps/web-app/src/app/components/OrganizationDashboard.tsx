@@ -17,6 +17,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 
+/** Loosely-typed row from various dashboard API responses. */
+interface RawRecord {
+  type?: string;
+  name?: string;
+  fullName?: string;
+  action?: string;
+  time?: string;
+  description?: string;
+  notes?: string;
+  status?: string;
+  dueDate?: string;
+  createdAt?: string;
+}
+
 export function OrganizationDashboard() {
   const { setHeader } = useLayout();
   const { user } = useAuth();
@@ -30,7 +44,7 @@ export function OrganizationDashboard() {
     );
   }, [user?.name]);
 
-  const { data: trendsData, isLoading: leadsLoading } = useQuery({
+  const { isLoading: leadsLoading } = useQuery({
     queryKey: ["dashboard-trends", organizationId],
     queryFn: () => getDashboardTrends(),
     enabled: !!organizationId,
@@ -49,14 +63,14 @@ export function OrganizationDashboard() {
   });
 
   // Robustly find the array in any nested API response
-  const findArray = (obj: any): any[] => {
+  const findArray = (obj: unknown): RawRecord[] => {
     if (!obj) return [];
-    if (Array.isArray(obj)) return obj;
+    if (Array.isArray(obj)) return obj as RawRecord[];
     if (typeof obj === "object") {
-      for (const key in obj) {
-        if (Array.isArray(obj[key])) return obj[key];
-        if (typeof obj[key] === "object" && obj[key] !== null) {
-          const nested = findArray(obj[key]);
+      for (const value of Object.values(obj as Record<string, unknown>)) {
+        if (Array.isArray(value)) return value as RawRecord[];
+        if (typeof value === "object" && value !== null) {
+          const nested = findArray(value);
           if (nested.length > 0) return nested;
         }
       }
@@ -64,7 +78,7 @@ export function OrganizationDashboard() {
     return [];
   };
 
-  const recentActivityRaw = findArray(firstTimersData).map((ft: any) => ({
+  const recentActivityRaw = findArray(firstTimersData).map((ft: RawRecord) => ({
     type: "First Timer",
     name: ft.fullName || ft.name || "Unknown",
     action: "registered",
@@ -74,12 +88,12 @@ export function OrganizationDashboard() {
   const followUpsRaw = findArray(followUpsData);
 
   // Filter based on global search
-  const filteredActivity = recentActivityRaw.filter((a: any) =>
+  const filteredActivity = recentActivityRaw.filter((a) =>
     a.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const filteredFollowUps = followUpsRaw.filter(
-    (fu: any) =>
+    (fu) =>
       (fu.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (fu.description || fu.notes || "")
         .toLowerCase()
@@ -129,7 +143,7 @@ export function OrganizationDashboard() {
               {filteredActivity.length > 0 ? (
                 filteredActivity
                   .slice(0, 4)
-                  .map((activity: any, index: number) => (
+                  .map((activity, index: number) => (
                     <div
                       key={index}
                       className="flex items-start gap-4 p-4 rounded-lg hover:bg-muted/30 transition-all border border-transparent hover:border-neutral-200"
@@ -174,7 +188,7 @@ export function OrganizationDashboard() {
             </div>
             <div className="space-y-4">
               {filteredFollowUps.length > 0 ? (
-                filteredFollowUps.slice(0, 3).map((fu: any, idx: number) => (
+                filteredFollowUps.slice(0, 3).map((fu, idx: number) => (
                   <div
                     key={idx}
                     className={`p-5 rounded-xl border-l-4 ${fu.status === "overdue" ? "border-l-red-500 bg-red-50/30" : "border-l-accent bg-accent/5"}`}

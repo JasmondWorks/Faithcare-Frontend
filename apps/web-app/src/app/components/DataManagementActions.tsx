@@ -1,7 +1,6 @@
 import { useState, useRef } from "react";
 import {
   Plus,
-  FileSpreadsheet,
   Loader2,
   ListFilter,
   CloudUpload,
@@ -70,7 +69,7 @@ export function DataManagementActions({
       } else {
         toast.error(res.error || "Upload failed");
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred during upload");
     } finally {
       setIsUploading(false);

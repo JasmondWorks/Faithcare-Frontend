@@ -64,9 +64,9 @@ export function deleteJournalEntry(id: string): Promise<ApiResponse<void>> {
 // than `??`) so that `data: null` is preserved instead of falling through to
 // the whole response object — matching the same fix applied to unwrapEnvelope.
 
-function extractTimerData<T>(parsed: any): T {
+function extractTimerData<T>(parsed: unknown): T {
   if (parsed !== null && typeof parsed === "object" && "data" in parsed) {
-    return parsed.data as T;
+    return (parsed as { data: T }).data;
   }
   return parsed as T;
 }
@@ -78,8 +78,8 @@ export async function createTimerSession(payload: CreateFocusSessionRequest): Pr
     const json = text ? JSON.parse(text) : {};
     if (!res.ok) throw new Error(json.message || "Failed to create timer session");
     return { success: true, data: extractTimerData<FocusSession>(json) };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -90,8 +90,8 @@ export async function getTimerSessions(userId: string, params?: Record<string, s
     const json = text ? JSON.parse(text) : [];
     if (!res.ok) throw new Error(json.message || "Failed to fetch timer sessions");
     return { success: true, data: extractTimerData<FocusSession[]>(json), meta: json?.meta };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -102,8 +102,8 @@ export async function updateTimerSession(id: string, payload: UpdateFocusSession
     const json = text ? JSON.parse(text) : {};
     if (!res.ok) throw new Error(json.message || "Failed to update timer session");
     return { success: true, data: extractTimerData<FocusSession>(json) };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -114,8 +114,8 @@ export async function completeTimerSession(id: string): Promise<ApiResponse<Focu
     const json = text ? JSON.parse(text) : {};
     if (!res.ok) throw new Error(json.message || "Failed to complete timer session");
     return { success: true, data: extractTimerData<FocusSession>(json) };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -129,8 +129,8 @@ export async function getActiveTimerSession(userId: string): Promise<ApiResponse
     }
     const json = text ? JSON.parse(text) : null;
     return { success: true, data: extractTimerData<FocusSession>(json) };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -146,8 +146,8 @@ export async function getTodayScripture(): Promise<GetTodayScriptureResponse> {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || `Failed to fetch scripture (${res.status})`);
     return data;
-  } catch (error: any) {
-    return error.message;
+  } catch (error) {
+    return (error instanceof Error ? error.message : String(error)) as unknown as GetTodayScriptureResponse;
   }
 }
 
@@ -157,8 +157,8 @@ export async function markScriptureAsRead(scriptureId: string): Promise<ApiRespo
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || `Failed to mark scripture as read (${res.status})`);
     return data;
-  } catch (error: any) {
-    return error.message;
+  } catch (error) {
+    return (error instanceof Error ? error.message : String(error)) as unknown as ApiResponse<void>;
   }
 }
 
@@ -170,8 +170,8 @@ export async function getScriptureHistory(params: FilterRequest): Promise<ApiRes
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || `Failed to fetch scripture history (${res.status})`);
     return data;
-  } catch (error: any) {
-    return error.message;
+  } catch (error) {
+    return (error instanceof Error ? error.message : String(error)) as unknown as ApiResponse<GetScriptureHistoryResponse>;
   }
 }
 

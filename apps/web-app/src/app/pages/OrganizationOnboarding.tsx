@@ -6,7 +6,6 @@ import {
   Building2,
   Users,
   MapPin,
-  Phone,
   Globe,
   Check,
   LogOut,
@@ -31,6 +30,7 @@ import {
   ORGANIZATION_ROLE_OPTIONS,
 } from "../constants/select-options.constants";
 import { completeOrganizationOnboarding } from "@/api/organization/church";
+import type { CreateOrganizationRequest } from "@/api/organization/types";
 
 const orgSchema = z.object({
   churchName: z.string().min(1, "Church name is required"),
@@ -49,7 +49,7 @@ type OrgValues = z.infer<typeof orgSchema>;
 
 export function OrganizationOnboarding() {
   const navigate = useNavigate();
-  const { user, setUser, logout, initializeSession } = useAuth();
+  const { user, logout, initializeSession } = useAuth();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -134,7 +134,9 @@ export function OrganizationOnboarding() {
       organizationRole: data.role,
     };
 
-    const res = await completeOrganizationOnboarding(payload as any);
+    const res = await completeOrganizationOnboarding(
+      payload as unknown as CreateOrganizationRequest,
+    );
     setIsLoading(false);
 
     if (res.success) {

@@ -79,7 +79,7 @@ export function SignIn() {
       } else {
         setError(result.error || "Login failed");
       }
-    } catch (err: any) {
+    } catch {
       setIsLoading(false);
       setError("An unexpected error occurred");
     }

@@ -1,5 +1,8 @@
 import * as React from "react";
-import PhoneInput, { getCountryCallingCode } from "react-phone-number-input";
+import PhoneInput, {
+  getCountryCallingCode,
+  type Country,
+} from "react-phone-number-input";
 import * as Flags from "country-flag-icons/react/3x2";
 import "react-phone-number-input/style.css";
 import en from "react-phone-number-input/locale/en.json";
@@ -16,7 +19,11 @@ export interface PhoneInputProps extends Omit<
   className?: string;
 }
 
-const CustomInput = React.forwardRef<HTMLInputElement, any>(
+type CustomInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
+  dialCode: string;
+};
+
+const CustomInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
   ({ dialCode, ...props }, ref) => {
     const prefix = `+${dialCode}`;
 
@@ -67,14 +74,29 @@ const CustomInput = React.forwardRef<HTMLInputElement, any>(
 );
 CustomInput.displayName = "CustomInput";
 
-const CountrySelect = ({ value, onChange, labels, options }: any) => {
+type CountrySelectOption = { value: Country | undefined; label: string };
+
+interface CountrySelectProps {
+  value: Country;
+  onChange: (value: Country) => void;
+  labels?: Record<string, string>;
+  options: CountrySelectOption[];
+}
+
+const flagComponents = Flags as Record<
+  string,
+  React.ComponentType<{ className?: string }>
+>;
+const localeLabels = en as Record<string, string>;
+
+const CountrySelect = ({ value, onChange, labels, options }: CountrySelectProps) => {
   const [search, setSearch] = React.useState("");
   const [open, setOpen] = React.useState(false);
-  const Flag = Flags ? (Flags as any)[value] : null;
+  const Flag = value ? flagComponents[value] : null;
 
-  const filteredOptions = options.filter((option: any) => {
+  const filteredOptions = options.filter((option) => {
     if (!option.value) return false;
-    const countryName = labels?.[option.value] || (en as any)[option.value] || "";
+    const countryName = labels?.[option.value] || localeLabels[option.value] || "";
     return (
       countryName.toLowerCase().includes(search.toLowerCase()) ||
       option.value.toLowerCase().includes(search.toLowerCase())
@@ -114,8 +136,10 @@ const CountrySelect = ({ value, onChange, labels, options }: any) => {
               No countries found
             </div>
           ) : (
-            filteredOptions.map((option: any) => {
-              const OptionFlag = Flags ? (Flags as any)[option.value] : null;
+            filteredOptions.map((option) => {
+              const OptionFlag = option.value
+                ? flagComponents[option.value]
+                : null;
               return (
                 <button
                   key={option.value}
@@ -127,7 +151,7 @@ const CountrySelect = ({ value, onChange, labels, options }: any) => {
                       : "hover:bg-neutral-50",
                   )}
                   onClick={() => {
-                    onChange(option.value);
+                    onChange(option.value!);
                     setSearch("");
                     setOpen(false);
                   }}
@@ -136,12 +160,12 @@ const CountrySelect = ({ value, onChange, labels, options }: any) => {
                     {OptionFlag ? <OptionFlag /> : <span>🌐</span>}
                   </div>
                   <span className="flex-1 truncate text-foreground/80 group-hover/option:text-foreground">
-                    {labels?.[option.value] ||
-                      (en as any)[option.value] ||
+                    {labels?.[option.value!] ||
+                      localeLabels[option.value!] ||
                       option.value}
                   </span>
                   <span className="text-xs text-muted-foreground font-mono">
-                    +{getCountryCallingCode(option.value)}
+                    +{getCountryCallingCode(option.value!)}
                   </span>
                 </button>
               );
@@ -153,13 +177,15 @@ const CountrySelect = ({ value, onChange, labels, options }: any) => {
   );
 };
 
-export const PhoneInputComponent = React.forwardRef<any, PhoneInputProps>(
-  ({ value, onChange, className, disabled, placeholder }) => {
-    const [country, setCountry] = React.useState<any>("NG");
+export const PhoneInputComponent = React.forwardRef<
+  HTMLInputElement,
+  PhoneInputProps
+>(({ value, onChange, className, disabled, placeholder }) => {
+    const [country, setCountry] = React.useState<Country>("NG");
     const dialCode = React.useMemo(() => {
       try {
         return getCountryCallingCode(country);
-      } catch (e) {
+      } catch {
         return "234";
       }
     }, [country]);
@@ -178,7 +204,9 @@ export const PhoneInputComponent = React.forwardRef<any, PhoneInputProps>(
           labels={en}
           inputComponent={CustomInput}
           countrySelectComponent={CountrySelect}
-          numberInputProps={{ dialCode } as any}
+          numberInputProps={
+            { dialCode } as React.InputHTMLAttributes<HTMLInputElement>
+          }
           className="w-full"
         />
       </div>

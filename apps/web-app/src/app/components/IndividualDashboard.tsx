@@ -4,8 +4,6 @@ import {
   Sparkles,
   Timer,
   TrendingUp,
-  Loader2,
-  Send,
 } from "lucide-react";
 import { useLayout } from "../contexts/LayoutContext";
 import { useAuth } from "../providers/AuthProvider";
@@ -24,9 +22,28 @@ import { useSearch } from "../contexts/SearchContext";
 import { Card, CardTitle, CardDescription } from "./ui/card";
 import { Button } from "@/components/ui/button";
 
+interface MetadataItem {
+  _id?: string;
+  id?: string;
+  dailyBibleReadingStreakCount?: number;
+  streak?: number;
+  scripturesCount?: number;
+  readingProgress?: number;
+  lastLoginDate?: string;
+}
+
+interface JournalItem {
+  _id?: string;
+  id?: string;
+  title?: string;
+  scriptureReference?: string;
+  content?: string;
+  createdAt: string;
+}
+
 export function IndividualDashboard() {
   const { setHeader, addNotification } = useLayout();
-  const { user, isLoading: isAuthLoading, userType } = useAuth();
+  const { user, userType } = useAuth();
 
   useEffect(() => {
     setHeader("Dashboard");
@@ -36,7 +53,7 @@ export function IndividualDashboard() {
 
 
 
-  const { data: metadataRes, isLoading: isMetadataLoading } = useQuery({
+  const { data: metadataRes } = useQuery({
     queryKey: ["myMetadata"],
     queryFn: getMyMetadata,
     enabled:
@@ -53,7 +70,6 @@ export function IndividualDashboard() {
   // 1. Fetch personal metadata (for streak and goals)
   const {
     data: metadataResponse,
-    isLoading,
     error: metadataError,
   } = useQuery({
     queryKey: ["individual-metadata", userId],
@@ -62,14 +78,14 @@ export function IndividualDashboard() {
   });
 
   // 2. Fetch Journals (to count and show latest)
-  const { data: journalsResponse, isLoading: isJournalsLoading } = useQuery({
+  const { data: journalsResponse } = useQuery({
     queryKey: ["journals", userId],
     queryFn: () => getJournalEntries({ userId, limit: 10 }), // Fetch more to allow better search filtering on dashboard
     enabled: !!userId,
   });
 
   // 3. Fetch Focus Sessions (to count)
-  const { data: timerResponse, isLoading: isTimerLoading } = useQuery({
+  const { data: timerResponse } = useQuery({
     queryKey: ["timer-sessions", userId],
     queryFn: () => getTimerSessions(userId),
     enabled: !!userId,
@@ -78,22 +94,30 @@ export function IndividualDashboard() {
   useEffect(() => {
     if (metadataError) {
       toast.error(
-        "Failed to load spiritual profile:" + (metadataError as any).message,
+        "Failed to load spiritual profile:" +
+          (metadataError instanceof Error
+            ? metadataError.message
+            : String(metadataError)),
       );
     }
   }, [metadataError]);
 
-  const metadataRaw = metadataResponse?.data as any;
-  const metadata = Array.isArray(metadataRaw) ? metadataRaw[0] : metadataRaw;
+  const metadataRaw = metadataResponse?.data as
+    | MetadataItem
+    | MetadataItem[]
+    | undefined;
+  const metadata: MetadataItem | undefined = Array.isArray(metadataRaw)
+    ? metadataRaw[0]
+    : metadataRaw;
 
   const journalsRaw = journalsResponse?.data;
-  const journals = Array.isArray(journalsRaw)
-    ? journalsRaw
-    : (journalsRaw as any)?.data ?? [];
+  const journals: JournalItem[] = Array.isArray(journalsRaw)
+    ? (journalsRaw as JournalItem[])
+    : ((journalsRaw as { data?: JournalItem[] } | undefined)?.data ?? []);
 
   // Apply Search Filtering to Journals on Dashboard
-  const filteredJournals = (journals as any[]).filter(
-    (j: any) =>
+  const filteredJournals = journals.filter(
+    (j) =>
       (j.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (j.scriptureReference || "")
         .toLowerCase()
@@ -103,7 +127,9 @@ export function IndividualDashboard() {
   const timerRaw = timerResponse?.data;
   const timerSessions = Array.isArray(timerRaw) ? timerRaw : [];
 
-  const journalCount = (journalsRaw as any)?.meta?.total ?? journals.length;
+  const journalCount =
+    (journalsRaw as { meta?: { total?: number } } | undefined)?.meta?.total ??
+    journals.length;
   const focusCount = timerSessions.length;
 
   const streak =
@@ -111,14 +137,14 @@ export function IndividualDashboard() {
     metadata?.streak ??
     (localStorage.getItem(`lastStreakUpdate_${userId}`) ? 1 : 0);
 
-  const calculateJournalingStreak = (entries: any[]) => {
+  const calculateJournalingStreak = (entries: JournalItem[]) => {
     if (!entries || entries.length === 0) return 0;
     const sortedEntries = [...entries].sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
     let streakCount = 0;
-    let currentDate = new Date();
+    const currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0);
     const latestEntryDate = new Date(sortedEntries[0].createdAt);
     latestEntryDate.setHours(0, 0, 0, 0);
@@ -185,7 +211,7 @@ export function IndividualDashboard() {
       if (!metadataItem) {
         completeIndividualOnboarding({
           dailyBibleReadingStreakCount: 1,
-        } as any).then((res) => {
+        }).then((res) => {
           if (res.success) {
             localStorage.setItem(
               `lastStreakUpdate_${userId}`,
@@ -344,7 +370,7 @@ export function IndividualDashboard() {
                 commitment to your spiritual walk is inspiring.
               </CardDescription>
               <Button
-                href="/daily-scripture"
+                href="/scripture"
                 className="inline-flex px-8 sm:px-10 shadow-xl shadow-primary/20"
               >
                 Today's Scripture
@@ -404,7 +430,7 @@ export function IndividualDashboard() {
               {filteredJournals.length > 0 ? (
                 filteredJournals
                   .slice(0, 3)
-                  .map((entry: any, index: number) => (
+                  .map((entry, index: number) => (
                     <Card
                       asChild
                       key={entry._id || index}

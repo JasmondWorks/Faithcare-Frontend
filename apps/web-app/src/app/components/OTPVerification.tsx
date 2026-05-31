@@ -3,7 +3,6 @@ import {
   ShieldCheck,
   ArrowRight,
   RefreshCw,
-  Loader2,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { verifyOTP, resendOTP } from "@/api/auth/auth";
@@ -68,7 +67,9 @@ export function OTPVerification() {
       toast.success("Verification successful!");
 
       // Use the centralized session initializer from useAuth
-      const sessionData = (res.data as any)?.data ?? res.data;
+      type SessionUser = Parameters<typeof initializeSession>[0];
+      const resData = res.data as { data?: { user?: SessionUser; accessToken?: string }; user?: SessionUser; accessToken?: string } | undefined;
+      const sessionData = resData?.data ?? resData;
       if (sessionData?.accessToken) {
         await initializeSession(sessionData.user, sessionData.accessToken);
       }

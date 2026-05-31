@@ -5,7 +5,6 @@ import { Bookmark, Trash2, BookOpen } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { getBookmarks, removeBookmark } from "@/api/scripture/scripture";
 import type { BookmarkedVerse } from "@/api/scripture/types";
-import { Card } from "../../components/ui/card";
 import { cn } from "@/lib/utils";
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -48,7 +47,7 @@ interface BookmarkRowProps {
 }
 
 function BookmarkRow({ bookmark, onDelete, isDeleting, onClick }: BookmarkRowProps) {
-  const [swipeOpen, setSwipeOpen] = useState(false);
+  const [swipeOpen] = useState(false);
 
   return (
     <div

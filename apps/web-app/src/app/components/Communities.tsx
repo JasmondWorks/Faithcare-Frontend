@@ -13,6 +13,7 @@ import {
 import { Badge } from "./ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCommunities, createCommunity, deleteCommunity } from "@/api/organization/church";
+import type { CreateCommunityRequest } from "@/api/organization/types";
 import { useAuth } from "../providers/AuthProvider";
 import { toast } from "react-hot-toast";
 import { useSearch } from "../contexts/SearchContext";
@@ -36,6 +37,26 @@ interface Community {
   members: CommunityMember[];
   createdDate: string;
   profileImage?: string;
+}
+
+interface RawCommunityMember {
+  id?: string | number;
+  _id?: string | number;
+  fullName?: string;
+  name?: string;
+  phoneNumber?: string;
+  email?: string;
+  createdAt?: string;
+}
+
+interface RawCommunity {
+  id?: string;
+  _id?: string;
+  name: string;
+  description?: string;
+  members?: RawCommunityMember[];
+  profileImage?: string;
+  createdAt?: string;
 }
 
 export function Communities() {
@@ -68,15 +89,21 @@ export function Communities() {
     enabled: !!organizationId,
   });
 
-  const _cr = (communitiesResponse?.data || []) as any;
-  const communitiesData = Array.isArray(_cr) ? _cr : Array.isArray(_cr?.data) ? _cr.data : [];
+  const _cr = (communitiesResponse?.data || []) as
+    | RawCommunity[]
+    | { data?: RawCommunity[] };
+  const communitiesData: RawCommunity[] = Array.isArray(_cr)
+    ? _cr
+    : Array.isArray(_cr?.data)
+      ? _cr.data
+      : [];
 
-  const communities: Community[] = communitiesData.map((c: any) => ({
-    id: c.id || c._id,
+  const communities: Community[] = communitiesData.map((c: RawCommunity) => ({
+    id: c.id || c._id || "",
     name: c.name,
     description: c.description || "No description provided",
     memberCount: c.members?.length || 0,
-    members: (c.members || []).map((m: any) => ({
+    members: (c.members || []).map((m: RawCommunityMember) => ({
       id: m.id || m._id,
       name: m.fullName || m.name || "Unknown",
       phone: m.phoneNumber || "N/A",
@@ -96,15 +123,16 @@ export function Communities() {
 
   // Mutations
   const createMutation = useMutation({
-    mutationFn: (payload: any) => createCommunity(organizationId, payload),
+    mutationFn: (payload: CreateCommunityRequest & { organizationId?: string }) =>
+      createCommunity(organizationId, payload),
     onSuccess: () => {
       toast.success("Community created!");
       queryClient.invalidateQueries({ queryKey: ["communities"] });
       setShowNewCommunityForm(false);
       setNewCommunity({ name: "", description: "" });
     },
-    onError: (error: any) =>
-      toast.error(error.message || "Failed to create community"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Failed to create community"),
   });
 
   const deleteMutation = useMutation({
@@ -114,7 +142,7 @@ export function Communities() {
       queryClient.invalidateQueries({ queryKey: ["communities"] });
       setSelectedCommunity(null);
     },
-    onError: (error: any) => toast.error(error.message || "Failed to delete"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Failed to delete"),
   });
 
   const handleCreateCommunity = () => {
