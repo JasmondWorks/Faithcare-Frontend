@@ -10,6 +10,23 @@ import { getFirstTimers } from "@/api/organization/church";
 import { useAuth } from "../providers/AuthProvider";
 import { AddMemberModal } from "./AddMemberModal";
 
+interface FirstTimerRow {
+  id?: string;
+  _id?: string;
+  visitType?: string;
+  visit_type?: string;
+  name?: string;
+  fullName?: string;
+  phone?: string;
+  phoneNumber?: string;
+  email?: string;
+  serviceDate?: string;
+  createdAt?: string;
+  secondVisitDate?: string;
+  status?: string;
+  prayerRequest?: string;
+}
+
 export function SecondTimers() {
   const { setHeader } = useLayout();
   useEffect(() => {
@@ -41,14 +58,15 @@ export function SecondTimers() {
   });
 
   // Robustly find the array regardless of nesting
-  const findArray = (obj: any): any[] => {
+  const findArray = (obj: unknown): unknown[] => {
     if (!obj) return [];
     if (Array.isArray(obj)) return obj;
     if (typeof obj === "object") {
       for (const key in obj) {
-        if (Array.isArray(obj[key])) return obj[key];
-        if (typeof obj[key] === "object" && obj[key] !== null) {
-          const nested = findArray(obj[key]);
+        const value = (obj as Record<string, unknown>)[key];
+        if (Array.isArray(value)) return value;
+        if (typeof value === "object" && value !== null) {
+          const nested = findArray(value);
           if (nested.length > 0) return nested;
         }
       }
@@ -56,16 +74,16 @@ export function SecondTimers() {
     return [];
   };
 
-  const rawData = findArray(secondTimersResponse);
+  const rawData = findArray(secondTimersResponse) as FirstTimerRow[];
 
   // CLIENT-SIDE GUARD: only show records explicitly marked as second_time.
   // This ensures correctness even if the backend ignores the visit_type query param.
-  const secondTimerRecords = rawData.filter((ft: any) => {
+  const secondTimerRecords = rawData.filter((ft: FirstTimerRow) => {
     const vt = (ft.visitType || ft.visit_type || "").toLowerCase();
     return vt === "second_time" || vt === "second";
   });
 
-  const timers = secondTimerRecords.map((ft: any) => ({
+  const timers = secondTimerRecords.map((ft: FirstTimerRow) => ({
     id: ft.id || ft._id,
     name: ft.fullName || ft.name || "N/A",
     fullName: ft.fullName || ft.name || "N/A",
@@ -177,7 +195,7 @@ export function SecondTimers() {
         <SecondTimersTable
           data={filteredData}
           currentPage={page}
-          totalPages={(secondTimersResponse as any)?.meta?.totalPages || 1}
+          totalPages={secondTimersResponse?.meta?.totalPages || 1}
           onPageChange={setPage}
         />
       </div>

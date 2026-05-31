@@ -25,7 +25,7 @@ export default function AppPagination({
     const showMax = 5; // Total page buttons to show at most
     
     let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, startPage + showMax - 1);
+    const endPage = Math.min(totalPages, startPage + showMax - 1);
     
     if (endPage - startPage < showMax - 1) {
       startPage = Math.max(1, endPage - showMax + 1);

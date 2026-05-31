@@ -17,7 +17,7 @@ import {
 import { Badge } from "./ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getFollowUps, updateFollowUp, deleteFollowUp } from "@/api/organization/church";
-import { useAuth } from "../providers/AuthProvider";
+import type { UpdateFollowUpRequest } from "@/api/organization/types";
 import { toast } from "react-hot-toast";
 import { useSearch } from "../contexts/SearchContext";
 import { DataManagementActions } from "./DataManagementActions";
@@ -68,7 +68,7 @@ interface FollowUp {
   isBulk?: boolean;
   type?: string;
   messageType?: string;
-  recipients?: any[];
+  recipients?: unknown[];
   recipientCount?: number;
   recipientGroup?: string;
   content?: string;
@@ -146,17 +146,20 @@ function getTagColor(tag: string = "") {
   }
 }
 
-function extractFollowUps(res: any): FollowUp[] {
+function extractFollowUps(res: unknown): FollowUp[] {
   if (!res) return [];
-  if (Array.isArray(res)) return res;
-  if (Array.isArray(res.data)) return res.data;
-  if (Array.isArray(res.data?.data)) return res.data.data;
-  if (Array.isArray(res.data?.followUps)) return res.data.followUps;
-  const findArray = (obj: any): any[] => {
+  if (Array.isArray(res)) return res as FollowUp[];
+  const r = res as {
+    data?: unknown & { data?: unknown; followUps?: unknown };
+  };
+  if (Array.isArray(r.data)) return r.data as FollowUp[];
+  if (Array.isArray(r.data?.data)) return r.data.data as FollowUp[];
+  if (Array.isArray(r.data?.followUps)) return r.data.followUps as FollowUp[];
+  const findArray = (obj: unknown): FollowUp[] => {
     if (!obj || typeof obj !== "object") return [];
-    for (const key in obj) {
-      if (Array.isArray(obj[key])) return obj[key];
-      const nested = findArray(obj[key]);
+    for (const value of Object.values(obj as Record<string, unknown>)) {
+      if (Array.isArray(value)) return value as FollowUp[];
+      const nested = findArray(value);
       if (nested.length > 0) return nested;
     }
     return [];
@@ -510,7 +513,6 @@ export function FollowUps() {
     setHeader("Follow Ups", "Track and manage pastor follow-ups with members");
   }, []);
 
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { searchTerm, setSearchTerm } = useSearch();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -526,12 +528,13 @@ export function FollowUps() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
-      updateFollowUp(id, { status } as any),
+      updateFollowUp(id, { status } as unknown as UpdateFollowUpRequest),
     onSuccess: () => {
       toast.success("Follow-up updated");
       queryClient.invalidateQueries({ queryKey: ["follow-ups"] });
     },
-    onError: (error: any) => toast.error(error.message || "Failed to update"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Failed to update"),
   });
 
   const deleteMutation = useMutation({
@@ -540,7 +543,8 @@ export function FollowUps() {
       toast.success("Follow-up removed");
       queryClient.invalidateQueries({ queryKey: ["follow-ups"] });
     },
-    onError: (error: any) => toast.error(error.message || "Failed to delete"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Failed to delete"),
   });
 
   const allFollowUps = extractFollowUps(followUpsResponse);
@@ -737,11 +741,11 @@ export function FollowUps() {
           )}
         </div>
 
-        {followUpsResponse && (followUpsResponse as any).meta && (
+        {followUpsResponse?.meta && (
           <div className="mt-6 rounded-2xl overflow-hidden border border-border">
             <AppPagination
               currentPage={page}
-              totalPages={(followUpsResponse as any).meta.totalPages || 1}
+              totalPages={followUpsResponse.meta.totalPages || 1}
               onPageChange={setPage}
             />
           </div>

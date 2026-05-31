@@ -23,11 +23,12 @@ export async function login(payload: LoginRequest): Promise<ApiResponse<LoginRes
     if (!response.ok) throw new Error(data.message || "Login failed");
 
     return data;
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string; status?: number };
     return {
       success: false,
-      error: error.message,
-      status: error.status || 500,
+      error: err.message,
+      status: err.status || 500,
     };
   }
 }
@@ -48,11 +49,12 @@ export async function signUpUser(payload: RegisterRequest): Promise<ApiResponse<
       data,
       status: response.status,
     };
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string; status?: number };
     return {
       success: false,
-      error: error.message,
-      status: error.status || 500,
+      error: err.message,
+      status: err.status || 500,
     };
   }
 }
@@ -73,11 +75,12 @@ export async function signUpOrg(payload: RegisterRequest): Promise<ApiResponse<R
       data,
       status: response.status,
     };
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string; status?: number };
     return {
       success: false,
-      error: error.message,
-      status: error.status || 500,
+      error: err.message,
+      status: err.status || 500,
     };
   }
 }
@@ -100,11 +103,12 @@ export async function logout() {
       data,
       status: response.status,
     };
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string; status?: number };
     return {
       success: false,
-      error: error.message,
-      status: error.status || 500,
+      error: err.message,
+      status: err.status || 500,
     };
   }
 }
@@ -125,14 +129,15 @@ export async function refreshToken(payload?: RefreshRequest): Promise<ApiRespons
     // Backend returns { success, accessToken, refreshToken, user } at top level.
     // Wrap in { success, data } so AuthProvider can extract via result.data.accessToken.
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string; status?: number };
     const isAuthError =
-      error.message?.toLowerCase().includes("unauthorized") ||
-      error.message?.includes("401");
+      err.message?.toLowerCase().includes("unauthorized") ||
+      err.message?.includes("401");
     return {
       success: false,
-      error: error.message,
-      status: isAuthError ? 401 : error.status || 500,
+      error: err.message,
+      status: isAuthError ? 401 : err.status || 500,
     };
   }
 }
@@ -154,11 +159,12 @@ export async function verifyOTP(payload: VerifyEmailOTPRequest): Promise<ApiResp
       data,
       status: response.status,
     };
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string; status?: number };
     return {
       success: false,
-      error: error.message,
-      status: error.status || 500,
+      error: err.message,
+      status: err.status || 500,
     };
   }
 }
@@ -180,11 +186,12 @@ export async function resendOTP(payload: ResendOTPRequest): Promise<ApiResponse<
       data,
       status: response.status,
     };
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string; status?: number };
     return {
       success: false,
-      error: error.message,
-      status: error.status || 500,
+      error: err.message,
+      status: err.status || 500,
     };
   }
 }
@@ -207,11 +214,12 @@ export async function forgotPassword(payload: ForgotPasswordRequest) {
       data,
       status: response.status,
     };
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string; status?: number };
     return {
       success: false,
-      error: error.message,
-      status: error.status || 500,
+      error: err.message,
+      status: err.status || 500,
     };
   }
 }
@@ -234,16 +242,17 @@ export async function resetPassword(payload: ResetPasswordRequest) {
       data,
       status: response.status,
     };
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { message?: string; status?: number };
     return {
       success: false,
-      error: error.message,
-      status: error.status || 500,
+      error: err.message,
+      status: err.status || 500,
     };
   }
 }
 
-export function changePassword(payload: any) {
+export function changePassword(payload: { currentPassword: string; newPassword: string }) {
   return apiPost("/auth/change-password", payload);
 }
 

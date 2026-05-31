@@ -89,7 +89,7 @@ const TimerHistoryTable: React.FC<TimerHistoryTableProps> = ({
     id: session._id || session.id || "",
   }));
 
-  const columns: TableColumn<any>[] = [
+  const columns: TableColumn<TimerSession>[] = [
     {
       key: "createdAt",
       label: "Date",

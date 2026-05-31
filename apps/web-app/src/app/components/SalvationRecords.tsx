@@ -13,54 +13,16 @@ import { AddMemberModal } from "./AddMemberModal";
 import { Card } from "./ui/card";
 import SalvationRecordsTable from "./SalvationRecordsTable";
 
-interface SalvationRecord {
-  id: number;
-  name: string;
-  phone: string;
-  email: string;
-  dateOfDecision: string;
-  followUpStatus: string;
-  notes: string;
+interface SalvationRecordRow {
+  name?: string;
+  fullName?: string;
+  notes?: string;
+  email?: string;
+  phone?: string;
+  phoneNumber?: string;
+  followUpStatus?: string;
+  dateOfDecision?: string;
 }
-
-const salvationRecordsData: SalvationRecord[] = [
-  {
-    id: 1,
-    name: "Jennifer Williams",
-    phone: "(555) 789-0123",
-    email: "jennifer.w@email.com",
-    dateOfDecision: "Mar 5, 2026",
-    followUpStatus: "Pending",
-    notes: "Made decision during altar call",
-  },
-  {
-    id: 2,
-    name: "Marcus Anderson",
-    phone: "(555) 890-1234",
-    email: "marcus.a@email.com",
-    dateOfDecision: "Mar 3, 2026",
-    followUpStatus: "Contacted",
-    notes: "Requested baptism information",
-  },
-  {
-    id: 3,
-    name: "Lisa Martinez",
-    phone: "(555) 901-2345",
-    email: "lisa.m@email.com",
-    dateOfDecision: "Feb 28, 2026",
-    followUpStatus: "Followed Up",
-    notes: "Connected with small group",
-  },
-  {
-    id: 4,
-    name: "Robert Taylor",
-    phone: "(555) 012-3456",
-    email: "robert.t@email.com",
-    dateOfDecision: "Feb 26, 2026",
-    followUpStatus: "Pending",
-    notes: "Came forward during worship",
-  },
-];
 
 export function SalvationRecords() {
   const { setHeader } = useLayout();
@@ -72,15 +34,14 @@ export function SalvationRecords() {
   }, []);
 
   const { user } = useAuth();
-  const { searchTerm, setSearchTerm } = useSearch();
+  const { searchTerm } = useSearch();
   const queryClient = useQueryClient();
-  const [showFollowUpMenu, setShowFollowUpMenu] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [page, setPage] = useState(1);
   const limit = 20;
   const organizationId = user?.organizationId || user?.id || "";
 
-  const { data: recordsResponse, isLoading } = useQuery({
+  const { data: recordsResponse } = useQuery({
     queryKey: ["salvation-records", organizationId, page],
     queryFn: () => getSalvationRecords(organizationId, page, limit),
     enabled: !!organizationId,
@@ -89,7 +50,7 @@ export function SalvationRecords() {
   const salvationRecordsData = recordsResponse?.data || [];
 
   const filteredRecords = Array.isArray(salvationRecordsData)
-    ? salvationRecordsData.filter((record: any) => {
+    ? salvationRecordsData.filter((record: SalvationRecordRow) => {
       if (!searchTerm) return true;
       const searchLower = searchTerm.toLowerCase().trim();
       return (
@@ -104,24 +65,6 @@ export function SalvationRecords() {
       );
     })
     : [];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "Contacted":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "Followed Up":
-        return "bg-green-100 text-green-800 border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  const handleFollowUp = (recordId: number, method: string) => {
-    console.log(`Following up with record ${recordId} via ${method}`);
-    setShowFollowUpMenu(null);
-  };
 
   return (
     <div className="space-y-6">
@@ -176,7 +119,8 @@ export function SalvationRecords() {
                   <h3 className="text-3xl font-bold">
                     {
                       salvationRecordsData.filter(
-                        (r: any) => r.followUpStatus === "Pending",
+                        (r: SalvationRecordRow) =>
+                          r.followUpStatus === "Pending",
                       ).length
                     }
                   </h3>
@@ -195,8 +139,8 @@ export function SalvationRecords() {
                   </p>
                   <h3 className="text-3xl font-bold">
                     {
-                      salvationRecordsData.filter((r: any) =>
-                        r.dateOfDecision.includes("Mar"),
+                      salvationRecordsData.filter((r: SalvationRecordRow) =>
+                        r.dateOfDecision?.includes("Mar"),
                       ).length
                     }
                   </h3>
@@ -212,7 +156,7 @@ export function SalvationRecords() {
           <SalvationRecordsTable 
             data={filteredRecords} 
             currentPage={page}
-            totalPages={(recordsResponse as any)?.meta?.totalPages || 1}
+            totalPages={recordsResponse?.meta?.totalPages || 1}
             onPageChange={setPage}
           />
         </div>

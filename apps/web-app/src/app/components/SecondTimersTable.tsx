@@ -19,13 +19,30 @@ interface SelectedMember {
   email?: string;
 }
 
+interface SecondTimerRow {
+  id: string | number;
+  _id?: string;
+  name?: string;
+  fullName?: string;
+  phone?: string;
+  phoneNumber?: string;
+  email?: string;
+  firstVisit?: string;
+  serviceDate?: string;
+  secondVisit?: string;
+  secondVisitDate?: string;
+  prayerRequest?: string;
+  status?: string;
+  [key: string]: unknown;
+}
+
 export default function SecondTimersTable({
   data,
   currentPage = 1,
   totalPages = 1,
   onPageChange,
 }: {
-  data: any[];
+  data: SecondTimerRow[];
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
@@ -39,12 +56,18 @@ export default function SecondTimersTable({
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
-      updateFirstTimerStatus(id, { status: status as any, notes: `Status updated to ${status}` }),
+      updateFirstTimerStatus(id, {
+        status: status as "PENDING" | "CONTACTED" | "FOLLOWED_UP" | "PROMOTED",
+        notes: `Status updated to ${status}`,
+      }),
     onSuccess: () => {
       toast.success("Status updated");
       queryClient.invalidateQueries({ queryKey: ["second-timers"] });
     },
-    onError: (error: any) => toast.error(error.message || "Failed to update status"),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update status",
+      ),
   });
 
   const followUpMutation = useMutation({
@@ -58,13 +81,16 @@ export default function SecondTimersTable({
       queryClient.invalidateQueries({ queryKey: ["second-timers"] });
       setFollowUpTarget(null);
     },
-    onError: (error: any) => toast.error(error.message || "Failed to send follow-up"),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Failed to send follow-up",
+      ),
   });
 
-  const handleOpenFollowUp = (item: any) => {
+  const handleOpenFollowUp = (item: SecondTimerRow) => {
     setFollowUpTarget({
-      id: item.id || item._id,
-      name: item.fullName || item.name,
+      id: String(item.id || item._id || ""),
+      name: item.fullName || item.name || "",
       phone: item.phoneNumber || item.phone,
       email: item.email,
     });
@@ -83,7 +109,7 @@ export default function SecondTimersTable({
     });
   };
 
-  const columns: TableColumn[] = useMemo(() => [
+  const columns: TableColumn<SecondTimerRow>[] = useMemo(() => [
     { key: "name", label: "Name" },
     { key: "contacts", label: "Contacts" },
     { key: "visits", label: "Visits" },

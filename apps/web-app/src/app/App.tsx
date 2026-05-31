@@ -36,12 +36,14 @@ import SignUpOrganization from "./pages/SignUpOrganization";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import AuthProvider from "./providers/AuthProvider";
 import { Settings } from "./pages/Settings";
+import { InstallPrompt } from "./components/InstallPrompt";
 
 
 export default function App() {
   return (
     <BrowserRouter>
       <Toaster position="top-center" reverseOrder={false} />
+      <InstallPrompt />
       <AuthProvider>
         <Routes>
           {/* ── Public routes ── */}

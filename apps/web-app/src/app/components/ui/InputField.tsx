@@ -62,12 +62,15 @@ export type InputFieldType =
   | "custom";
 
 export interface InputFieldProps extends Omit<React.ComponentProps<"input">, "type" | "onChange" | "value" | "name" | "ref" | "children"> {
+  // react-hook-form's Control is invariant in its field-values type, so there
+  // is no non-`any` supertype that accepts every caller's concrete Control.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   control?: Control<any>;
   name: string;
   label?: React.ReactNode;
   placeholder?: string;
   type?: InputFieldType;
-  icon?: any; // Accepting the icon component
+  icon?: React.ReactElement | React.ElementType; // Accepting the icon component
   iconPosition?: "left" | "right";
   description?: React.ReactNode;
   disabled?: boolean;
@@ -76,18 +79,18 @@ export interface InputFieldProps extends Omit<React.ComponentProps<"input">, "ty
   labelClassName?: string;
 
   // Standard React / Non-hook-form props
-  value?: any;
-  onChange?: (e: any) => void;
-  onBlur?: (e: any) => void;
+  value?: unknown;
+  onChange?: (e: { target: { name: string; value: unknown } }) => void;
+  onBlur?: (e: React.FocusEvent) => void;
   error?: string;
 
   // Select / Radio Group Props
   options?: { label: string; value: string }[];
 
   // Searchable Select Props
-  searchableOptions?: any[];
-  getDisplayValue?: (item: any) => React.ReactNode;
-  getStringValue?: (item: any) => string;
+  searchableOptions?: unknown[];
+  getDisplayValue?: (item: unknown) => React.ReactNode;
+  getStringValue?: (item: unknown) => string;
   onSearch?: (searchTerm: string) => void;
 
   // OTP Props
@@ -99,7 +102,7 @@ export interface InputFieldProps extends Omit<React.ComponentProps<"input">, "ty
     | ((field: ControllerRenderProps<FieldValues, string>) => React.ReactNode);
 }
 
-export const InputField = React.forwardRef<any, InputFieldProps>(
+export const InputField = React.forwardRef<HTMLElement, InputFieldProps>(
   (
     {
       control,
@@ -133,15 +136,21 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
     const [search, setSearch] = React.useState("");
     const [open, setOpen] = React.useState(false);
 
-    const renderFieldContent = (field: any) => {
+    const renderFieldContent = (
+      field: ControllerRenderProps<FieldValues, string>,
+    ) => {
       const useForm = !!control;
       const ControlWrapper = useForm ? FormControl : React.Fragment;
+      // The same ref is forwarded to several different element types
+      // (input, textarea, button, div, ...). Ref<never> is assignable to
+      // every concrete Ref<HTMLElement>, so it satisfies all call sites.
+      const mergedRef = (field.ref || ref) as React.Ref<never>;
 
       switch (type) {
         case "text":
         case "email":
         case "number":
-        case "password":
+        case "password": {
           const isPassword = type === "password";
           return (
             <div className="relative group">
@@ -154,7 +163,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
                 >
                   {React.isValidElement(icon)
                     ? icon
-                    : React.createElement(icon, {
+                    : React.createElement(icon as React.ElementType, {
                         className: "w-4 h-4",
                         strokeWidth: 1.5,
                       })}
@@ -177,7 +186,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
                   )}
                   {...restProps}
                   {...field}
-                  ref={field.ref || ref}
+                  ref={mergedRef}
                   value={field.value ?? ""}
                   onChange={(e) => {
                     const val =
@@ -207,6 +216,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
               )}
             </div>
           );
+        }
 
         case "time":
           return (
@@ -221,7 +231,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
                   React.isValidElement(icon) ? (
                     icon
                   ) : (
-                    React.createElement(icon, {
+                    React.createElement(icon as React.ElementType, {
                       className: "w-4 h-4",
                       strokeWidth: 1.5,
                     })
@@ -242,7 +252,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
                   )}
                   {...restProps}
                   {...field}
-                  ref={field.ref || ref}
+                  ref={mergedRef}
                   value={field.value ?? ""}
                 />
               </ControlWrapper>
@@ -260,7 +270,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
                   inputClassName,
                 )}
                 {...field}
-                ref={field.ref || ref}
+                ref={mergedRef}
                 value={field.value ?? ""}
               />
             </ControlWrapper>
@@ -275,7 +285,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
                   onCheckedChange={field.onChange}
                   disabled={disabled}
                   className={inputClassName}
-                  ref={field.ref || ref}
+                  ref={mergedRef}
                 />
               </ControlWrapper>
               {label &&
@@ -302,7 +312,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
               onChange={field.onChange}
               disabled={disabled}
               className={inputClassName}
-              ref={field.ref || ref}
+              ref={mergedRef}
             >
               <InputOTPGroup>
                 {Array.from({ length: otpLength }).map((_, i) => (
@@ -337,7 +347,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
                       !field.value && "text-muted-foreground font-normal",
                       inputClassName,
                     )}
-                    ref={field.ref || ref}
+                    ref={mergedRef}
                   >
                     {field.value
                       ? options.find((option) => option.value === field.value)
@@ -421,7 +431,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
               defaultValue={field.value}
               className={cn("flex flex-col space-y-1", inputClassName)}
               disabled={disabled}
-              ref={field.ref || ref}
+              ref={mergedRef}
             >
               {options.map((option) => (
                 <div
@@ -478,7 +488,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
                 placeholder={placeholder}
                 disabled={disabled}
                 className={inputClassName}
-                ref={field.ref || ref}
+                ref={mergedRef}
               />
             </ControlWrapper>
           );
@@ -496,7 +506,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
                 onChange={(e) => field.onChange(e.target.files)}
                 onBlur={field.onBlur}
                 name={field.name}
-                ref={field.ref || ref}
+                ref={mergedRef}
               />
             </ControlWrapper>
           );
@@ -509,7 +519,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
                 disabled={disabled}
                 className={cn("min-h-[200px]", inputClassName)}
                 {...field}
-                ref={field.ref || ref}
+                ref={mergedRef}
                 value={field.value ?? ""}
               />
             </ControlWrapper>
@@ -540,7 +550,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
                       inputClassName,
                     )}
                     disabled={disabled}
-                    ref={field.ref || ref}
+                    ref={mergedRef}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {field.value ? format(field.value, "PPP") : <span>{placeholder || "Pick a date"}</span>}
@@ -572,7 +582,7 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
                         !field.value && "text-muted-foreground",
                       )}
                       disabled={disabled}
-                      ref={field.ref || ref}
+                      ref={mergedRef}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {field.value?.from ? (
@@ -651,19 +661,19 @@ export const InputField = React.forwardRef<any, InputFieldProps>(
     const standaloneField = {
       name,
       value,
-      onChange: (val: any) => {
+      onChange: (val: unknown) => {
         if (onChange) {
           // If it looks like an event, pass it through, otherwise mock it
           if (val && typeof val === "object" && "target" in val) {
-            onChange(val);
+            onChange(val as { target: { name: string; value: unknown } });
           } else {
-            onChange({ target: { name, value: val } } as any);
+            onChange({ target: { name, value: val } });
           }
         }
       },
-      onBlur: (e: any) => onBlur?.(e),
+      onBlur: (e: React.FocusEvent) => onBlur?.(e),
       ref: ref,
-    };
+    } as unknown as ControllerRenderProps<FieldValues, string>;
 
     return (
       <div className={cn("w-full grid gap-2", className)}>

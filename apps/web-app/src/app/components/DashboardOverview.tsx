@@ -2,6 +2,16 @@ import { UserPlus, CheckCircle, Heart, BookOpen, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getDashboardTrends, getFirstTimers, getFollowUps } from "@/api/organization/church";
 
+interface TrendsShape {
+  firstTimersCount?: number;
+  pendingFollowUps?: number;
+  activePrayers?: number;
+  prayerRequestsCount?: number;
+  journalEntries?: number;
+  journalCount?: number;
+  data?: TrendsShape;
+}
+
 export function DashboardOverview() {
   const { data: trendsData, isLoading } = useQuery({
     queryKey: ["dashboard-trends-overview"],
@@ -23,14 +33,15 @@ export function DashboardOverview() {
   });
 
   // Robustly find arrays regardless of nesting
-  const findArray = (obj: any): any[] => {
+  const findArray = (obj: unknown): unknown[] => {
     if (!obj) return [];
     if (Array.isArray(obj)) return obj;
     if (typeof obj === "object") {
-      for (const key in obj) {
-        if (Array.isArray(obj[key])) return obj[key];
-        if (typeof obj[key] === "object" && obj[key] !== null) {
-          const nested = findArray(obj[key]);
+      const record = obj as Record<string, unknown>;
+      for (const key in record) {
+        if (Array.isArray(record[key])) return record[key] as unknown[];
+        if (typeof record[key] === "object" && record[key] !== null) {
+          const nested = findArray(record[key]);
           if (nested.length > 0) return nested;
         }
       }
@@ -39,16 +50,17 @@ export function DashboardOverview() {
   };
 
   // Resolve trends - handle both { data: { firstTimersCount } } and { firstTimersCount }
-  const trends = ((trendsData?.data as any)?.firstTimersCount !== undefined
-    ? trendsData?.data
-    : (trendsData?.data as any)?.data?.firstTimersCount !== undefined
-      ? (trendsData?.data as any)?.data
-      : trendsData?.data || {}) as any;
+  const trendsRoot = trendsData?.data as TrendsShape | undefined;
+  const trends: TrendsShape = (trendsRoot?.firstTimersCount !== undefined
+    ? trendsRoot
+    : trendsRoot?.data?.firstTimersCount !== undefined
+      ? trendsRoot?.data
+      : trendsRoot || {}) as TrendsShape;
 
   const firstTimersArr = findArray(firstTimersData);
   const followUpsArr = findArray(followUpsData);
   const pendingFollowUpsCount = followUpsArr.filter(
-    (f: any) => f.status?.toUpperCase() !== "COMPLETED"
+    (f) => (f as { status?: string }).status?.toUpperCase() !== "COMPLETED"
   ).length;
 
   const statsData = [

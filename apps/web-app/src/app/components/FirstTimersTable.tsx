@@ -10,6 +10,7 @@ import { DataManagementActions } from "./DataManagementActions";
 
 import { Button } from "@/components/ui/button";
 import { updateFirstTimerStatus, createFollowUp, updateFirstTimerVisitType } from "@/api/organization/church";
+import type { RegisterFirstTimerRequest } from "@/api/organization/types";
 import { useAuth } from "../providers/AuthProvider";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -21,13 +22,30 @@ interface SelectedMember {
   email?: string;
 }
 
+/** Loosely-typed first-timer row as rendered by the table. */
+interface FirstTimerRow {
+  id: string | number;
+  _id?: string;
+  name?: string;
+  fullName?: string;
+  phone?: string;
+  phoneNumber?: string;
+  email?: string;
+  status?: string;
+  prayerRequest?: string;
+  firstVisit?: string;
+  serviceDate?: string;
+  secondVisit?: string;
+  [key: string]: unknown;
+}
+
 export default function FirstTimersTable({
   data,
   currentPage = 1,
   totalPages = 1,
   onPageChange,
 }: {
-  data: any[];
+  data: FirstTimerRow[];
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
@@ -42,12 +60,18 @@ export default function FirstTimersTable({
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
-      updateFirstTimerStatus(id, { status: status as any, notes: `Status updated to ${status}` }),
+      updateFirstTimerStatus(id, {
+        status: status as "PENDING" | "CONTACTED" | "FOLLOWED_UP" | "PROMOTED",
+        notes: `Status updated to ${status}`,
+      }),
     onSuccess: () => {
       toast.success("Status updated");
       queryClient.invalidateQueries({ queryKey: ["first-timers"] });
     },
-    onError: (error: any) => toast.error(error.message || "Failed to update status"),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update status",
+      ),
   });
 
   const followUpMutation = useMutation({
@@ -59,25 +83,35 @@ export default function FirstTimersTable({
       queryClient.invalidateQueries({ queryKey: ["first-timers"] });
       setFollowUpTarget(null);
     },
-    onError: (error: any) => toast.error(error.message || "Failed to send follow-up"),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Failed to send follow-up",
+      ),
   });
 
   const visitTypeMutation = useMutation({
-    mutationFn: (payload: any) =>
-      updateFirstTimerVisitType(organizationId, payload.id, payload),
+    mutationFn: (payload: FirstTimerRow & { id: string }) =>
+      updateFirstTimerVisitType(
+        organizationId,
+        payload.id,
+        payload as unknown as RegisterFirstTimerRequest,
+      ),
     onSuccess: () => {
       toast.success("Updated to second timer");
       queryClient.invalidateQueries({ queryKey: ["first-timers"] });
       queryClient.invalidateQueries({ queryKey: ["second-timers"] });
       navigate("/second-timers");
     },
-    onError: (error: any) => toast.error(error.message || "Failed to update visit type"),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update visit type",
+      ),
   });
 
-  const handleOpenFollowUp = (item: any) => {
+  const handleOpenFollowUp = (item: FirstTimerRow) => {
     setFollowUpTarget({
-      id: item.id || item._id,
-      name: item.fullName || item.name,
+      id: String(item.id || item._id),
+      name: item.fullName || item.name || "",
       phone: item.phoneNumber || item.phone,
       email: item.email,
     });
@@ -97,11 +131,11 @@ export default function FirstTimersTable({
     });
   };
 
-  const handleMakeSecondTimer = (item: any) => {
-    visitTypeMutation.mutate({ id: item.id || item._id, ...item });
+  const handleMakeSecondTimer = (item: FirstTimerRow) => {
+    visitTypeMutation.mutate({ ...item, id: (item.id || item._id) as string });
   };
 
-  const columns: TableColumn[] = useMemo(() => [
+  const columns: TableColumn<FirstTimerRow>[] = useMemo(() => [
     { key: "fullName", label: "Name" },
     { key: "prayerRequest", label: "Prayer Request" },
     { key: "firstVisit", label: "First Visit" },

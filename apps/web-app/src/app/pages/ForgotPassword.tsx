@@ -4,10 +4,7 @@ import {
   ArrowRight,
   ArrowLeft,
   Lock,
-  Eye,
-  EyeOff,
   Sparkles,
-  KeyRound,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -46,8 +43,6 @@ export default function ForgotPassword() {
   const [submittedEmail, setSubmittedEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
 
   const emailForm = useForm<EmailValues>({
     resolver: zodResolver(emailSchema),

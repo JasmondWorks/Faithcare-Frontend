@@ -31,11 +31,14 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function extractEntries(data: any): JournalEntry[] {
-  if (Array.isArray(data)) return data;
-  if (data?.entries && Array.isArray(data.entries)) return data.entries;
-  if (data?.data && Array.isArray(data.data)) return data.data;
-  if (data?.docs && Array.isArray(data.docs)) return data.docs;
+function extractEntries(data: unknown): JournalEntry[] {
+  if (Array.isArray(data)) return data as JournalEntry[];
+  if (data && typeof data === "object") {
+    const obj = data as Record<string, unknown>;
+    if (Array.isArray(obj.entries)) return obj.entries as JournalEntry[];
+    if (Array.isArray(obj.data)) return obj.data as JournalEntry[];
+    if (Array.isArray(obj.docs)) return obj.docs as JournalEntry[];
+  }
   return [];
 }
 
@@ -63,7 +66,7 @@ export function SundayJournal() {
   const fetchEntries = async () => {
     setIsFetching(true);
     try {
-      const res = await getJournalEntries({ page, limit } as any);
+      const res = await getJournalEntries({ page, limit });
 
 
       if (res.success) {

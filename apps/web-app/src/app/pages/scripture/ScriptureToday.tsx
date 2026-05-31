@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
@@ -8,7 +8,6 @@ import {
   NotebookPen,
   ArrowRight,
   ExternalLink,
-  Loader2,
   Bookmark,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -67,7 +66,9 @@ function NotesAndCompletionPanel({ recordId, initialNotes, isCompleted, complete
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const promises: Promise<any>[] = [saveScriptureNotes(recordId, notes)];
+      const promises: Promise<{ success?: boolean }>[] = [
+        saveScriptureNotes(recordId, notes),
+      ];
       if (!isCompleted) {
         promises.push(markScriptureComplete(recordId));
       }
@@ -81,7 +82,7 @@ function NotesAndCompletionPanel({ recordId, initialNotes, isCompleted, complete
         queryClient.invalidateQueries({ queryKey: ["scripture-today"] });
         queryClient.invalidateQueries({ queryKey: ["scripture-history"] });
       }
-    } catch (e) {
+    } catch {
       toast.error("An error occurred");
     } finally {
       setIsSaving(false);

@@ -66,7 +66,9 @@ export default function ScriptureHistory() {
     staleTime: 5 * 60_000,
   });
 
-  const streak = (metadataRes?.data as any)?.dailyBibleReadingStreakCount ?? 0;
+  const streak =
+    (metadataRes?.data as { dailyBibleReadingStreakCount?: number } | undefined)
+      ?.dailyBibleReadingStreakCount ?? 0;
   const entries: UserDailyScripture[] = historyRes?.data ?? [];
   const grouped = groupByMonth(entries);
 

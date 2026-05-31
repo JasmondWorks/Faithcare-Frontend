@@ -6,9 +6,6 @@ import {
   User,
   ArrowRight,
   Phone,
-  Loader2,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -46,8 +43,6 @@ type SignUpValues = z.infer<typeof signUpSchema>;
 export function SignUp({ type }: { type: string }) {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverEmailError, setServerEmailError] = useState<string | null>(null);
 
   const form = useForm<SignUpValues>({

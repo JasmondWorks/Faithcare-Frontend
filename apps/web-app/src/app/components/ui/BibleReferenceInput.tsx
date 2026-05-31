@@ -65,7 +65,7 @@ export function BibleReferenceInput({
           type="text"
           placeholder={placeholder}
           value={value}
-          onChange={(e) => {
+          onChange={(e: any) => {
             onChange(e.target.value);
             setIsOpen(true);
           }}

@@ -15,7 +15,7 @@ export interface SearchableSelectProps<T> {
   getListDisplayValue?: (item: T) => React.ReactNode;
   value?: string;
   onInputChange?: (value: string) => void;
-  icon?: any;
+  icon?: React.ReactElement | React.ElementType;
   containerClassName?: string;
   inputClassName?: string;
   required?: boolean;
@@ -157,7 +157,7 @@ const SearchableSelect = <T,>({
           <div className="absolute left-4.5 top-1/2 -translate-y-1/2 z-10 text-muted-foreground group-focus-within:text-accent transition-colors">
             {React.isValidElement(icon)
               ? icon
-              : React.createElement(icon, {
+              : React.createElement(icon as React.ElementType, {
                   className: "w-4 h-4",
                   strokeWidth: 1.5,
                 })}

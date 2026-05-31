@@ -15,15 +15,10 @@ import {
   LogOut,
   Send,
   FileText,
-  Brain,
   ChevronDown,
   History,
   Bookmark,
   ListChecks,
-  BarChart2,
-  PlusCircle,
-  Dumbbell,
-  Library,
 } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useLayout } from "../contexts/LayoutContext";

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Lightbulb } from "lucide-react";
-import { cn } from "@/lib/utils";
 import type { ReflectionData } from "@/api/scripture/types";
 
 interface ReflectionPanelProps {
