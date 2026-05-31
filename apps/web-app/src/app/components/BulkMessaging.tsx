@@ -41,11 +41,7 @@ export function BulkMessaging() {
 
   // Helper to robustly find the data array
   const followUps: FollowUpItem[] = (() => {
-    const r = followUpsResponse as
-      | Record<string, unknown>
-      | FollowUpItem[]
-      | null
-      | undefined;
+    const r = followUpsResponse as any;
     if (!r) return [];
     if (Array.isArray(r)) return r;
     if (Array.isArray(r.data)) return r.data as FollowUpItem[];

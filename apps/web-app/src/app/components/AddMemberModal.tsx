@@ -136,7 +136,7 @@ export function AddMemberModal({
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
   const form = useForm<MemberFormValues>({
-    resolver: zodResolver(getSchema()),
+    resolver: zodResolver(getSchema()) as any,
     defaultValues: {
       name: "",
       email: "",
@@ -254,7 +254,7 @@ export function AddMemberModal({
 
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit(onSubmit)}
+            onSubmit={form.handleSubmit(onSubmit as any)}
             className="space-y-4 mt-4"
           >
             {/* â”€â”€ Name â”€â”€ */}
