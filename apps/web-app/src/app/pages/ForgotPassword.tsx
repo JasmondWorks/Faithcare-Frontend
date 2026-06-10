@@ -1,12 +1,13 @@
-﻿import { forgotPassword, resetPassword } from "@/api/auth/auth";
+﻿import { forgotPassword, resetPassword, resendOTP } from "@/api/auth/auth";
 import {
   Mail,
   ArrowRight,
   ArrowLeft,
   Lock,
   Sparkles,
+  RefreshCw,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,9 +22,12 @@ const emailSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
 });
 
-const resetSchema = z
+const otpSchema = z.object({
+  otp: z.string().length(6, "Enter the 6-digit code sent to your email"),
+});
+
+const passwordSchema = z
   .object({
-    otp: z.string().length(6, "Enter the 6-digit code sent to your email"),
     newPassword: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
   })
@@ -33,26 +37,58 @@ const resetSchema = z
   });
 
 type EmailValues = z.infer<typeof emailSchema>;
-type ResetValues = z.infer<typeof resetSchema>;
+type OtpValues = z.infer<typeof otpSchema>;
+type PasswordValues = z.infer<typeof passwordSchema>;
 
-type Step = "email" | "reset" | "done";
+type Step = "email" | "verify" | "password" | "done";
+
+function isOtpError(message: string) {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("otp") ||
+    lower.includes("code") ||
+    lower.includes("expired")
+  );
+}
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("email");
   const [submittedEmail, setSubmittedEmail] = useState("");
+  const [verifiedOtp, setVerifiedOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resendTimer, setResendTimer] = useState(30);
+  const [canResend, setCanResend] = useState(false);
 
   const emailForm = useForm<EmailValues>({
     resolver: zodResolver(emailSchema),
     defaultValues: { email: "" },
   });
 
-  const resetForm = useForm<ResetValues>({
-    resolver: zodResolver(resetSchema),
-    defaultValues: { otp: "", newPassword: "", confirmPassword: "" },
+  const otpForm = useForm<OtpValues>({
+    resolver: zodResolver(otpSchema),
+    defaultValues: { otp: "" },
   });
+
+  const passwordForm = useForm<PasswordValues>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: { newPassword: "", confirmPassword: "" },
+  });
+
+  useEffect(() => {
+    if (step !== "verify") return;
+
+    let interval: ReturnType<typeof setInterval>;
+    if (resendTimer > 0 && !canResend) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    } else {
+      setCanResend(true);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer, canResend, step]);
 
   const onEmailSubmit = async (data: EmailValues) => {
     setIsLoading(true);
@@ -61,28 +97,75 @@ export default function ForgotPassword() {
     setIsLoading(false);
     if (result.success) {
       setSubmittedEmail(data.email.toLowerCase());
-      setStep("reset");
+      setVerifiedOtp("");
+      otpForm.reset();
+      setResendTimer(30);
+      setCanResend(false);
+      setStep("verify");
     } else {
       setError(result.error || "Failed to send reset code. Please try again.");
     }
   };
 
-  const onResetSubmit = async (data: ResetValues) => {
+  const onVerifySubmit = (data: OtpValues) => {
+    setVerifiedOtp(data.otp);
+    setError(null);
+    passwordForm.reset();
+    setStep("password");
+  };
+
+  const onPasswordSubmit = async (data: PasswordValues) => {
     setIsLoading(true);
     setError(null);
     const result = await resetPassword({
       email: submittedEmail,
-      otp: data.otp,
+      otp: verifiedOtp,
       newPassword: data.newPassword,
     });
     setIsLoading(false);
     if (result.success) {
       setStep("done");
     } else {
-      setError(
+      const errorMessage =
         result.error ||
-          "Failed to reset password. Check your code and try again.",
-      );
+        "Failed to reset password. Check your code and try again.";
+
+      if (isOtpError(errorMessage)) {
+        setVerifiedOtp("");
+        otpForm.reset({ otp: "" });
+        setStep("verify");
+      }
+
+      setError(errorMessage);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!canResend) return;
+
+    setResendTimer(30);
+    setCanResend(false);
+    setError(null);
+
+    const result = await resendOTP({
+      email: submittedEmail,
+      type: "password_reset",
+    });
+
+    if (!result.success) {
+      setError(result.error || "Failed to resend code. Please try again.");
+    }
+  };
+
+  const goBack = () => {
+    setError(null);
+    if (step === "verify") {
+      setStep("email");
+      setVerifiedOtp("");
+    } else if (step === "password") {
+      setStep("verify");
+      setVerifiedOtp("");
+      otpForm.reset();
     }
   };
 
@@ -119,32 +202,96 @@ export default function ForgotPassword() {
                     icon={Mail}
                   />
 
-                {error && <ErrorMessage message={error} />}
+                  {error && <ErrorMessage message={error} />}
 
-                <Button
-                  type="submit"
-                  isLoading={isLoading}
-                  className="w-full shadow-xl shadow-primary/20"
-                >
-                  {isLoading ? "Sending..." : "Send Reset Code"}
-                  {!isLoading && <ArrowRight className="w-5 h-5" />}
-                </Button>
+                  <Button
+                    type="submit"
+                    isLoading={isLoading}
+                    className="w-full shadow-xl shadow-primary/20"
+                  >
+                    {isLoading ? "Sending..." : "Send Reset Code"}
+                    {!isLoading && <ArrowRight className="w-5 h-5" />}
+                  </Button>
                 </form>
               </Form>
             </>
           )}
 
-          {/* Step: Reset */}
-          {step === "reset" && (
+          {/* Step: Verify OTP */}
+          {step === "verify" && (
             <>
               <div className="mb-10">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    setStep("email");
-                    setError(null);
-                  }}
+                  onClick={goBack}
+                  className="px-0 hover:bg-transparent text-muted-foreground hover:text-foreground mb-6"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+                <h2 className="text-3xl font-bold text-foreground mb-3 tracking-tight">
+                  Enter reset code
+                </h2>
+                <p className="text-muted-foreground leading-relaxed">
+                  We sent a 6-digit code to{" "}
+                  <span className="text-foreground font-medium">
+                    {submittedEmail}
+                  </span>
+                  . Enter it below to continue.
+                </p>
+              </div>
+
+              <Form {...otpForm}>
+                <form
+                  onSubmit={otpForm.handleSubmit(onVerifySubmit)}
+                  className="space-y-6"
+                >
+                  <InputField
+                    control={otpForm.control}
+                    name="otp"
+                    label="Reset Code"
+                    placeholder="123456"
+                    type="otp"
+                    otpLength={6}
+                    className="flex flex-col items-start w-full"
+                  />
+
+                  {error && <ErrorMessage message={error} />}
+
+                  <Button
+                    type="submit"
+                    className="w-full shadow-xl shadow-primary/20"
+                  >
+                    Verify Code
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+
+                  <div className="text-center">
+                    <Button
+                      variant="link"
+                      type="button"
+                      onClick={handleResend}
+                      disabled={!canResend}
+                      className="h-auto p-0 text-sm text-accent font-medium"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      {canResend ? "Resend Code" : `Resend in ${resendTimer}s`}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </>
+          )}
+
+          {/* Step: Set Password */}
+          {step === "password" && (
+            <>
+              <div className="mb-10">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goBack}
                   className="px-0 hover:bg-transparent text-muted-foreground hover:text-foreground mb-6"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
@@ -154,33 +301,17 @@ export default function ForgotPassword() {
                   Set a new password
                 </h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  We sent a 6-digit code to{" "}
-                  <span className="text-foreground font-medium">
-                    {submittedEmail}
-                  </span>
-                  . Enter it below along with your new password.
+                  Choose a new password for your account.
                 </p>
               </div>
 
-              <Form {...resetForm}>
+              <Form {...passwordForm}>
                 <form
-                  onSubmit={resetForm.handleSubmit(onResetSubmit)}
+                  onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
                   className="space-y-6"
                 >
-                  {/* OTP */}
                   <InputField
-                    control={resetForm.control}
-                    name="otp"
-                    label="Reset Code"
-                    placeholder="123456"
-                    type="otp"
-                    otpLength={6}
-                    className="flex flex-col items-start w-full"
-                  />
-
-                  {/* New Password */}
-                  <InputField
-                    control={resetForm.control}
+                    control={passwordForm.control}
                     name="newPassword"
                     label="New Password"
                     placeholder="At least 8 characters"
@@ -188,9 +319,8 @@ export default function ForgotPassword() {
                     icon={Lock}
                   />
 
-                  {/* Confirm Password */}
                   <InputField
-                    control={resetForm.control}
+                    control={passwordForm.control}
                     name="confirmPassword"
                     label="Confirm Password"
                     placeholder="Repeat your new password"
@@ -198,22 +328,16 @@ export default function ForgotPassword() {
                     icon={Lock}
                   />
 
-                {error && (
-                  <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
-                    <p className="text-sm text-destructive font-medium">
-                      {error}
-                    </p>
-                  </div>
-                )}
+                  {error && <ErrorMessage message={error} />}
 
-                <Button
-                  type="submit"
-                  isLoading={isLoading}
-                  className="w-full shadow-xl shadow-primary/20"
-                >
-                  {isLoading ? "Resetting..." : "Reset Password"}
-                  {!isLoading && <ArrowRight className="w-5 h-5" />}
-                </Button>
+                  <Button
+                    type="submit"
+                    isLoading={isLoading}
+                    className="w-full shadow-xl shadow-primary/20"
+                  >
+                    {isLoading ? "Resetting..." : "Reset Password"}
+                    {!isLoading && <ArrowRight className="w-5 h-5" />}
+                  </Button>
                 </form>
               </Form>
             </>

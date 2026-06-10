@@ -1,4 +1,6 @@
 import { baseUrl } from "@/constants/api";
+import { enqueueMutation } from "@/lib/offlineQueue";
+import type { HttpMethod } from "@/lib/offlineQueue";
 import type { ApiResponse } from "./shared/types";
 
 type RequestOptions = RequestInit & {
@@ -8,6 +10,18 @@ type RequestOptions = RequestInit & {
 let inMemoryToken: string | null = null;
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
+
+const OFFLINE_QUEUE_EXCLUDED_PREFIXES = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/logout",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/verify-email",
+  "/auth/resend-otp",
+  "/auth/google",
+];
 
 export function setInMemoryToken(token: string | null) {
   inMemoryToken = token;
@@ -26,20 +40,59 @@ function onRrefreshed(token: string) {
   refreshSubscribers = [];
 }
 
+function isExcludedFromOfflineQueue(endpoint: string): boolean {
+  return OFFLINE_QUEUE_EXCLUDED_PREFIXES.some((prefix) =>
+    endpoint.startsWith(prefix),
+  );
+}
+
+function shouldQueueOffline(method: string | undefined, endpoint: string): boolean {
+  if (!method || method === "GET" || method === "HEAD") return false;
+  if (isExcludedFromOfflineQueue(endpoint)) return false;
+  return true;
+}
+
+function isNetworkFailure(error: unknown): boolean {
+  return error instanceof TypeError;
+}
+
+function parseRequestBody(body: BodyInit | null | undefined): object | undefined {
+  if (!body || typeof body !== "string") return undefined;
+  try {
+    return JSON.parse(body) as object;
+  } catch {
+    return undefined;
+  }
+}
+
+async function queueOfflineRequest(
+  endpoint: string,
+  options: RequestOptions,
+): Promise<Response> {
+  await enqueueMutation({
+    method: options.method as HttpMethod,
+    path: endpoint,
+    body: parseRequestBody(options.body),
+  });
+
+  return new Response(
+    JSON.stringify({ success: true, queued: true, message: "Saved offline" }),
+    { status: 202, headers: { "Content-Type": "application/json" } },
+  );
+}
+
 export async function apiRequest(
   endpoint: string,
   options: RequestOptions = {},
 ): Promise<Response> {
   const { params, headers, ...rest } = options;
 
-  // Build URL with query params
   let url = `${baseUrl}${endpoint}`;
   if (params) {
     const searchParams = new URLSearchParams(params);
     url += `?${searchParams.toString()}`;
   }
 
-  // Strictly use in-memory token to ensure security
   const token = inMemoryToken;
 
   const defaultHeaders: HeadersInit = {
@@ -51,10 +104,23 @@ export async function apiRequest(
   const config: RequestInit = {
     ...rest,
     headers: defaultHeaders,
-    credentials: "include", // Ensure cookies are sent with all requests
+    credentials: "include",
   };
 
-  const response = await fetch(url, config);
+  if (!navigator.onLine && shouldQueueOffline(options.method, endpoint)) {
+    return queueOfflineRequest(endpoint, options);
+  }
+
+  let response: Response;
+
+  try {
+    response = await fetch(url, config);
+  } catch (error) {
+    if (shouldQueueOffline(options.method, endpoint) && isNetworkFailure(error)) {
+      return queueOfflineRequest(endpoint, options);
+    }
+    throw error;
+  }
 
   if (response.status === 401) {
       if (!isRefreshing) {
@@ -68,19 +134,13 @@ export async function apiRequest(
 
           if (refreshResponse.ok) {
             const data = await refreshResponse.json();
-            // Auth refresh returns { success, accessToken } at the top level.
             const newToken = data.accessToken ?? data.data?.accessToken;
 
-            // Update memory token
             setInMemoryToken(newToken);
-            
-            // Note: We'll let AuthProvider handle the persistent user state, 
-            // but we update the in-memory token here for the retry.
 
             onRrefreshed(newToken);
             isRefreshing = false;
 
-            // Retry original request
             const retryHeaders = {
               ...defaultHeaders,
               Authorization: `Bearer ${newToken}`,
@@ -88,11 +148,7 @@ export async function apiRequest(
             return fetch(url, { ...config, headers: retryHeaders });
           } else {
             isRefreshing = false;
-            // Clear memory on failure
             setInMemoryToken(null);
-            
-            // We don't force a redirect here; let the component/hook handle it
-            // or AuthProvider will pick up the 401 via some other means
             return response;
           }
         } catch {
@@ -101,7 +157,6 @@ export async function apiRequest(
         }
       }
 
-      // If already refreshing, wait for it
       return new Promise<Response>((resolve) => {
         subscribeTokenRefresh((newToken) => {
           const retryHeaders = {
@@ -117,17 +172,23 @@ export async function apiRequest(
 }
 
 // ── Typed CRUD helpers ────────────────────────────────────────────────────────
-// Thin wrappers around apiRequest that parse JSON, check response.ok, unwrap
-// the standard { data: ... } envelope, and return ApiResponse<T>.
-// Import these in any API module instead of repeating the same boilerplate.
 
 function unwrapEnvelope<T>(json: unknown): T {
-  // Use `in` instead of `??` so that an explicit `data: null` is returned as
-  // null rather than falling through to the whole response object.
   if (json !== null && typeof json === "object" && "data" in json) {
     return (json as { data: T }).data;
   }
   return json as T;
+}
+
+function parseApiJson<T>(json: Record<string, unknown>): ApiResponse<T> {
+  if (json.queued === true) {
+    return { success: true, queued: true, status: 202 };
+  }
+  return {
+    success: true,
+    data: unwrapEnvelope<T>(json),
+    meta: json.meta as ApiResponse<T>["meta"],
+  };
 }
 
 export async function apiGet<T>(path: string, params?: Record<string, string>): Promise<ApiResponse<T>> {
@@ -135,7 +196,7 @@ export async function apiGet<T>(path: string, params?: Record<string, string>): 
     const res = await apiRequest(path, params ? { params } : {});
     const json = await res.json();
     if (!res.ok) throw new Error(json.message || `Request failed: GET ${path}`);
-    return { success: true, data: unwrapEnvelope<T>(json), meta: json.meta };
+    return parseApiJson<T>(json);
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
@@ -145,8 +206,8 @@ export async function apiPost<T>(path: string, body: object): Promise<ApiRespons
   try {
     const res = await apiRequest(path, { method: "POST", body: JSON.stringify(body) });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.message || `Request failed: POST ${path}`);
-    return { success: true, data: unwrapEnvelope<T>(json), meta: json.meta };
+    if (!res.ok && res.status !== 202) throw new Error(json.message || `Request failed: POST ${path}`);
+    return parseApiJson<T>(json);
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
@@ -159,8 +220,8 @@ export async function apiPatch<T>(path: string, body?: object): Promise<ApiRespo
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.message || `Request failed: PATCH ${path}`);
-    return { success: true, data: unwrapEnvelope<T>(json), meta: json.meta };
+    if (!res.ok && res.status !== 202) throw new Error(json.message || `Request failed: PATCH ${path}`);
+    return parseApiJson<T>(json);
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
@@ -170,8 +231,8 @@ export async function apiPut<T>(path: string, body: object): Promise<ApiResponse
   try {
     const res = await apiRequest(path, { method: "PUT", body: JSON.stringify(body) });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.message || `Request failed: PUT ${path}`);
-    return { success: true, data: unwrapEnvelope<T>(json), meta: json.meta };
+    if (!res.ok && res.status !== 202) throw new Error(json.message || `Request failed: PUT ${path}`);
+    return parseApiJson<T>(json);
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
@@ -180,6 +241,9 @@ export async function apiPut<T>(path: string, body: object): Promise<ApiResponse
 export async function apiDelete(path: string): Promise<ApiResponse<void>> {
   try {
     const res = await apiRequest(path, { method: "DELETE" });
+    if (res.status === 202) {
+      return { success: true, queued: true, status: 202 };
+    }
     if (!res.ok) {
       const json = await res.json();
       throw new Error(json.message || `Request failed: DELETE ${path}`);
