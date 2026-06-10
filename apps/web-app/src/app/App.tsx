@@ -35,8 +35,10 @@ import SignUpIndividual from "./pages/SignUpIndividual";
 import SignUpOrganization from "./pages/SignUpOrganization";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import AuthProvider from "./providers/AuthProvider";
+import { OfflineSyncProvider } from "./providers/OfflineSyncProvider";
 import { Settings } from "./pages/Settings";
 import { InstallPrompt } from "./components/InstallPrompt";
+import { OfflineBanner } from "./components/OfflineBanner";
 
 
 export default function App() {
@@ -45,6 +47,8 @@ export default function App() {
       <Toaster position="top-center" reverseOrder={false} />
       <InstallPrompt />
       <AuthProvider>
+        <OfflineSyncProvider>
+        <OfflineBanner />
         <Routes>
           {/* ── Public routes ── */}
           <Route path="/" element={<LandingPage />} />
@@ -124,6 +128,7 @@ export default function App() {
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </OfflineSyncProvider>
       </AuthProvider>
     </BrowserRouter>
   );

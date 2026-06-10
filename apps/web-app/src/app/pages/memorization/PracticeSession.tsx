@@ -1,16 +1,15 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ArrowLeft, BookOpen } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { getQueue, submitReview } from "@/api/memorization/memorization";
-import type { DueVerseItem, Grade, PendingReview } from "@/api/memorization/types";
+import type { DueVerseItem, Grade } from "@/api/memorization/types";
 import { ChallengeFirstLetter } from "../../components/memorization/ChallengeFirstLetter";
 import { ChallengeCloze } from "../../components/memorization/ChallengeCloze";
 import { ChallengeFullRecall } from "../../components/memorization/ChallengeFullRecall";
 import { useLayout } from "../../contexts/LayoutContext";
 
-const PENDING_KEY = "mem_pending_reviews";
 const SESSION_KEY = "mem_session";
 
 type SessionPhase = "loading" | "empty" | "intro" | "practice" | "summary";
@@ -20,14 +19,6 @@ interface SessionResult {
   reference: string;
   grade: Grade;
   timeSpent: number;
-}
-
-function readPending(): PendingReview[] {
-  try { return JSON.parse(localStorage.getItem(PENDING_KEY) ?? "[]"); } catch { return []; }
-}
-
-function writePending(items: PendingReview[]) {
-  localStorage.setItem(PENDING_KEY, JSON.stringify(items));
 }
 
 function PracticeSkeleton() {
@@ -61,41 +52,12 @@ export default function PracticeSession() {
 
   const reviewMutation = useMutation({
     mutationFn: submitReview,
-    onError: (_, variables) => {
-      // Offline queue — store and retry later
-      const pending = readPending();
-      pending.push({
-        verseId: variables.verseId,
-        grade: variables.grade,
-        timeSpentSeconds: variables.timeSpentSeconds,
-        reviewedAt: variables.reviewedAt ?? new Date().toISOString(),
-      });
-      writePending(pending);
-      toast.error("Saved offline — will sync when reconnected.", { duration: 3000 });
+    onSuccess: (res) => {
+      if (res.queued) {
+        toast.success("Saved offline — will sync when reconnected.", { duration: 3000 });
+      }
     },
   });
-
-  // Flush offline queue on mount / focus
-  const flushPending = useCallback(async () => {
-    const pending = readPending();
-    if (pending.length === 0) return;
-    let flushed = 0;
-    for (const item of pending) {
-      const res = await submitReview(item);
-      if (res.success) flushed++;
-      else break;
-    }
-    if (flushed > 0) {
-      writePending(pending.slice(flushed));
-      toast.success(`Synced ${flushed} offline review${flushed > 1 ? "s" : ""}.`, { duration: 2500 });
-    }
-  }, []);
-
-  useEffect(() => {
-    flushPending();
-    window.addEventListener("focus", flushPending);
-    return () => window.removeEventListener("focus", flushPending);
-  }, [flushPending]);
 
   // Restore session from sessionStorage
   useEffect(() => {

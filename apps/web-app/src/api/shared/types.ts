@@ -90,6 +90,8 @@ export interface ApiResponse<T> {
     meta?: PaginationMetaInfo | null;
     error?: string;
     status?: number;
+    /** True when the request was saved locally and will sync when back online. */
+    queued?: boolean;
 }
 
 export interface FilterRequest {

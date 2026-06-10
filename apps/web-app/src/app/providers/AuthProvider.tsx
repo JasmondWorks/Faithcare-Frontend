@@ -5,7 +5,14 @@ import {
 } from "@/api/auth/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { setInMemoryToken } from "@/api/helper";
+import { clearOfflineQueue } from "@/lib/offlineQueue";
+import { clearPersistedQueryCache } from "@/lib/offlineQueryCache";
 import { LoadingScreen } from "../components/LoadingScreen";
+
+function clearOfflineData() {
+  clearPersistedQueryCache();
+  clearOfflineQueue();
+}
 
 type JwtPayload = Record<string, unknown>;
 
@@ -108,6 +115,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setInMemoryToken(providedToken);
         setUser(mergedUser);
         queryClient.clear();
+        clearOfflineData();
         setIsLoading(false);
         return { success: true, user: mergedUser, token: providedToken };
       }
@@ -155,6 +163,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setInMemoryToken(null);
       setUser(null);
       queryClient.clear();
+      clearOfflineData();
     }
   };
 
