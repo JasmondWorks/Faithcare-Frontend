@@ -1,4 +1,4 @@
-import { Mail, Lock, ArrowRight, Sparkles } from "lucide-react";
+import { Mail, Lock, ArrowRight, Church } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../providers/AuthProvider";
@@ -211,7 +211,7 @@ export function SignIn() {
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-accent/10 to-accent/5 items-center justify-center p-16">
         <div className="max-w-lg">
           <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-8 border border-accent/20 shadow-xl shadow-accent/5">
-            <Sparkles className="w-8 h-8 text-accent" />
+            <Church className="w-8 h-8 text-accent" />
           </div>
           <h2 className="text-4xl font-bold text-foreground mb-6 tracking-tight">
             Empowering spiritual growth for your community

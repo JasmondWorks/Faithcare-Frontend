@@ -1,4 +1,4 @@
-﻿import { Sparkles } from "lucide-react";
+﻿import { Church } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface LogoProps {
@@ -26,7 +26,7 @@ const Logo: React.FC<LogoProps> = ({
       to={target === "landingPage" ? landingPageUrl : "/dashboard"}
       className={`flex items-center gap-3 hover:opacity-80 transition-opacity w-fit mb-10 ${alignment === "center" ? "mx-auto" : ""} ${className}`}
     >
-      <Sparkles className={sizeClasses[size]} />
+      <Church className={sizeClasses[size]} />
       <span
         className={`font-bold text-foreground tracking-tight ${
           size === "small"

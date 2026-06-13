@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { Loader2, AlertTriangle, CheckCircle2, Sparkles } from "lucide-react";
+import { Loader2, AlertTriangle, CheckCircle2, Church } from "lucide-react";
 import { verifyInviteToken } from "@/api/auth/auth";
 import { SetPasswordForm } from "../components/SetPasswordForm";
 import Logo from "../components/Logo";
@@ -125,7 +125,7 @@ export default function AcceptInvite() {
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-accent/10 to-accent/5 items-center justify-center p-16">
         <div className="max-w-lg">
           <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-8 border border-accent/20 shadow-xl shadow-accent/5">
-            <Sparkles className="w-8 h-8 text-accent" />
+            <Church className="w-8 h-8 text-accent" />
           </div>
           <h2 className="text-4xl font-bold text-foreground mb-6 tracking-tight">
             You're joining a community of faith

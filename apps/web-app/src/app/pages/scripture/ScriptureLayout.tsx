@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { Sparkles, BookOpen, ListChecks, Bookmark, History } from "lucide-react";
+import { ScrollText, BookOpen, ListChecks, Bookmark, History } from "lucide-react";
 import { useLayout } from "../../contexts/LayoutContext";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { to: "/scripture",           label: "Today",     icon: Sparkles,    exact: true  },
+  { to: "/scripture",           label: "Today",     icon: ScrollText,  exact: true  },
   { to: "/scripture/read",      label: "Read",      icon: BookOpen,    exact: false },
   { to: "/scripture/plans",     label: "Plans",     icon: ListChecks,  exact: false },
   { to: "/scripture/bookmarks", label: "Bookmarks", icon: Bookmark,    exact: false },

@@ -1,15 +1,22 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../providers/AuthProvider";
 
 export function LandingPage() {
   const landingPage = import.meta.env.VITE_LANDING_PAGE_URL;
-
-  console.log(landingPage)
+  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    if (isLoading) return;
+    if (user) {
+      navigate("/dashboard", { replace: true });
+      return;
+    }
     if (landingPage) {
       window.location.href = landingPage;
     }
-  }, [landingPage]);
+  }, [user, isLoading, landingPage, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

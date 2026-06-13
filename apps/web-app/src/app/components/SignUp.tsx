@@ -1,6 +1,6 @@
 import { signUpOrg, signUpUser } from "@/api/auth/auth";
 import {
-  Sparkles,
+  Church,
   Mail,
   Lock,
   User,
@@ -101,7 +101,7 @@ export function SignUp({ type }: { type: string }) {
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-accent/10 to-accent/5 items-center justify-center p-16">
         <div className="max-w-lg">
           <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-6 border border-accent/20">
-            <Sparkles className="w-8 h-8" style={{ color: "#d4a574" }} />
+            <Church className="w-8 h-8" style={{ color: "#d4a574" }} />
           </div>
           <h2 className="text-foreground mb-4">
             Join thousands of churches growing together

@@ -1,5 +1,6 @@
 import { useLayout } from "../contexts/LayoutContext";
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Save, BookOpen, Calendar, Loader2, Trash2, Plus, Edit3 } from "lucide-react";
 import {
   createJournalEntry,
@@ -49,6 +50,8 @@ export function SundayJournal() {
   }, []);
 
   const { user } = useAuth();
+  const location = useLocation();
+  const linkedEntryId = (location.state as { entryId?: string } | null)?.entryId;
 
   const { searchTerm } = useSearch();
 
@@ -85,6 +88,12 @@ export function SundayJournal() {
       fetchEntries();
     }
   }, [user?.id, page]);
+
+  useEffect(() => {
+    if (!linkedEntryId || entries.length === 0) return;
+    const target = entries.find((e) => (e._id || e.id) === linkedEntryId);
+    if (target) selectEntry(target);
+  }, [linkedEntryId, entries]);
 
   const filteredEntries = entries.filter((entry) => {
     const q = searchTerm.toLowerCase();

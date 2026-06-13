@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
-  Sparkles,
+  Church,
   Loader2,
   CheckCircle2,
   Link2Off,
@@ -69,7 +69,7 @@ const labelCls = "block text-sm font-semibold text-foreground mb-1.5 ml-0.5";
 function BrandMark() {
   return (
     <div className="flex items-center justify-center gap-2 mb-8">
-      <Sparkles className="w-6 h-6 text-accent" />
+      <Church className="w-6 h-6 text-accent" />
       <span className="text-lg font-bold text-foreground tracking-tight">
         FaithCare
       </span>

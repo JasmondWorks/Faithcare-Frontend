@@ -81,17 +81,14 @@ define(['./workbox-970124e6'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "/index.html",
-    "revision": "0.auffo8115tc"
+    "revision": "0.vpmgc48ndls"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {
     allowlist: [/^\/$/],
     denylist: [/^\/api/]
   }));
-  workbox.registerRoute(({
-    url,
-    request
-  }) => request.method === "GET" && url.origin === apiOrigin, new workbox.NetworkFirst({
+  workbox.registerRoute(/^https:\/\/faithcare-13a2dc003ee9\.herokuapp\.com/, new workbox.NetworkFirst({
     "cacheName": "api-get-cache",
     "networkTimeoutSeconds": 5,
     plugins: [new workbox.ExpirationPlugin({

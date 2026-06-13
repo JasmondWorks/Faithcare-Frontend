@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  Sparkles,
+  Church,
   ArrowRight,
   ArrowLeft,
   Building2,
@@ -501,7 +501,7 @@ function AdditionalInfoForm({ form }: { form: UseFormReturn<OrgValues> }) {
         <div className="bg-gradient-to-br from-accent/10 to-accent/5 rounded-2xl p-8 border border-accent/20 shadow-xl shadow-accent/5">
           <div className="flex items-start gap-5">
             <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center border border-accent/20 flex-shrink-0 shadow-md">
-              <Sparkles className="w-8 h-8 text-accent" />
+              <Church className="w-8 h-8 text-accent" />
             </div>
             <div>
               <h4 className="text-lg font-bold text-foreground mb-2">
