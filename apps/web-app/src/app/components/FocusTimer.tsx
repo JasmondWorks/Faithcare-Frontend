@@ -4,7 +4,7 @@ import {
   Play,
   Pause,
   RotateCcw,
-  Sparkles,
+  CheckCircle2,
   Loader2,
   History,
   Clock,
@@ -83,7 +83,7 @@ export function FocusTimer() {
               <div className="py-8 animate-in fade-in zoom-in duration-500">
                 <div className="flex justify-center mb-8">
                   <div className="w-24 h-24 rounded-full flex items-center justify-center">
-                    <Sparkles className="w-12 h-12 text-success" />
+                    <CheckCircle2 className="w-12 h-12 text-success" />
                   </div>
                 </div>
                 <h2 className="text-3xl font-bold text-foreground mb-4">

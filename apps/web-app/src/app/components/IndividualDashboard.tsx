@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
 import {
   BookOpen,
-  Sparkles,
+  ScrollText,
+  Cross,
   Timer,
   TrendingUp,
 } from "lucide-react";
@@ -225,7 +226,7 @@ export function IndividualDashboard() {
               description:
                 "We're glad to have you. Your journey of spiritual growth starts today.",
               time: "Just now",
-              icon: "Sparkles",
+              icon: "Flame",
               color: "text-accent",
               bg: "bg-accent/10",
               type: "individual",
@@ -334,7 +335,7 @@ export function IndividualDashboard() {
     {
       title: "Scriptures Read",
       value: (metadata?.scripturesCount || 0).toString(),
-      icon: Sparkles,
+      icon: ScrollText,
       color: "#3b82f6",
     },
     {
@@ -358,7 +359,7 @@ export function IndividualDashboard() {
         {/* Welcome Section */}
         <Card className="relative overflow-hidden shadow-xl shadow-accent/5 p-5 sm:p-8">
           <div className="absolute top-0 right-0 p-6 sm:p-10 opacity-[0.03] dark:opacity-[0.07]">
-            <Sparkles className="w-48 h-48 sm:w-64 sm:h-64 text-accent" />
+            <Cross className="w-48 h-48 sm:w-64 sm:h-64 text-accent" />
           </div>
           <div className="relative z-10 flex flex-col md:flex-row items-start justify-between gap-6 sm:gap-8">
             <div className="flex-1 space-y-2">
@@ -439,7 +440,8 @@ export function IndividualDashboard() {
                       className="group"
                     >
                       <Link
-                        to={`/sunday-journal/${entry._id}`}
+                        to="/sunday-journal"
+                        state={{ entryId: entry._id }}
                         className="p-5 block"
                       >
                         <div className="flex items-center justify-between mb-2">
@@ -564,7 +566,7 @@ export function IndividualDashboard() {
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             {[
-              { to: "/daily-scripture", icon: Sparkles, label: "Scripture" },
+              { to: "/scripture", icon: ScrollText, label: "Scripture" },
               { to: "/sunday-journal", icon: BookOpen, label: "Journaling" },
               { to: "/focus-timer", icon: Timer, label: "Focus" },
               { to: "/settings", icon: TrendingUp, label: "Insights" },

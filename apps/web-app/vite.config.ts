@@ -29,8 +29,7 @@ export default defineConfig(({ mode }) => {
           runtimeCaching: apiOrigin
             ? [
                 {
-                  urlPattern: ({ url, request }) =>
-                    request.method === 'GET' && url.origin === apiOrigin,
+                  urlPattern: new RegExp(`^${apiOrigin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
                   handler: 'NetworkFirst',
                   options: {
                     cacheName: 'api-get-cache',

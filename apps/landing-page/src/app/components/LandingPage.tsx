@@ -4,10 +4,9 @@ import {
   ArrowRight,
   Smartphone,
   Clock,
-  Sparkles,
+  Church,
   CheckCircle2,
   ChevronRight,
-  SparklesIcon,
 } from "lucide-react";
 import { Navbar } from "./Navbar";
 
@@ -571,7 +570,7 @@ export function LandingPage() {
         <footer className="bg-background py-12 border-t border-border/40 relative z-10">
           <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-accent" />
+              <Church className="w-4 h-4 text-accent" />
               <span className="text-sm font-bold text-foreground">
                 FaithCare
               </span>

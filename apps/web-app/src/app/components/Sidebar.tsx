@@ -5,7 +5,7 @@ import {
   Heart,
   CheckCircle,
   BookOpen,
-  Sparkles,
+  ScrollText,
   Timer,
   Settings,
   Award,
@@ -19,6 +19,7 @@ import {
   History,
   Bookmark,
   ListChecks,
+  Sun,
 } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useLayout } from "../contexts/LayoutContext";
@@ -68,10 +69,10 @@ const individualNav: NavItem[] = [
     kind: "group",
     id: "scripture",
     label: "Scripture",
-    icon: Sparkles,
+    icon: ScrollText,
     basePath: "/scripture",
     children: [
-      { to: "/scripture", label: "Today", icon: Sparkles },
+      { to: "/scripture", label: "Today", icon: Sun },
       { to: "/scripture/read", label: "Read Bible", icon: BookOpen },
       { to: "/scripture/plans", label: "Reading Plans", icon: ListChecks },
       { to: "/scripture/bookmarks", label: "Bookmarks", icon: Bookmark },

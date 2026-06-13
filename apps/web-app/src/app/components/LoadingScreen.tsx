@@ -1,5 +1,5 @@
 ﻿import React from "react";
-import { Sparkles } from "lucide-react";
+import { Church } from "lucide-react";
 
 interface LoadingScreenProps {
   churchName?: string;
@@ -20,7 +20,7 @@ export function LoadingScreen({ churchName }: LoadingScreenProps) {
         {/* Logo / Icon Area */}
         <div className="mb-10 relative">
           <div className="w-24 h-24 bg-card border border-border rounded-[2rem] flex items-center justify-center shadow-2xl relative z-10 animate-in zoom-in-50 duration-700">
-            <Sparkles className="w-12 h-12 text-accent animate-pulse" />
+            <Church className="w-12 h-12 text-accent animate-pulse" />
           </div>
           {/* Decorative Rings */}
           <div className="absolute inset-0 -m-6 border border-accent/20 rounded-[2.5rem] animate-ping opacity-20" style={{ animationDuration: '3s' }} />

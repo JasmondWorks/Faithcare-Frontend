@@ -31,7 +31,7 @@ import {
   MessageSquare,
   CheckCircle2,
   XCircle,
-  Sparkles,
+  Star,
   Copy,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -110,7 +110,7 @@ function TemplateBadges({
     <div className="flex items-center gap-1.5 flex-wrap">
       {isPreset && (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700 text-[10px] font-bold uppercase tracking-wider">
-          <Sparkles className="w-2.5 h-2.5" />
+          <Star className="w-2.5 h-2.5" />
           Preset
         </span>
       )}

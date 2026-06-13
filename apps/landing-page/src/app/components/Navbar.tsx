@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { SparklesIcon } from "lucide-react";
+import { ChurchIcon } from "lucide-react";
 
 // You can configure this in .env.local
 const webAppUrl =
@@ -64,7 +64,7 @@ export function Navbar() {
     <nav className="fixed top-0 left-0 right-0 bg-background/85 backdrop-blur-xl z-50 border-b border-border/40 px-6 h-16 flex items-center">
       <div className="max-w-6xl mx-auto flex items-center justify-between w-full">
         <div className="flex items-center gap-2 transition-spring hover:opacity-80">
-          <SparklesIcon className="w-7 h-7 text-accent" />
+          <ChurchIcon className="w-7 h-7 text-accent" />
           <span className="text-xl font-bold text-foreground tracking-tight">
             FaithCare
           </span>
