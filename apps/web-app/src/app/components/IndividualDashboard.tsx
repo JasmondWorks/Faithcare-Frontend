@@ -1,362 +1,143 @@
-import React, { useEffect } from "react";
-import {
-  BookOpen,
-  ScrollText,
-  Cross,
-  Timer,
-  TrendingUp,
-} from "lucide-react";
+import { useEffect } from "react";
+import { BookOpen, ScrollText, Cross, Timer, TrendingUp } from "lucide-react";
 import { useLayout } from "../contexts/LayoutContext";
 import { useAuth } from "../providers/AuthProvider";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
-  getMetadataByUserId,
+  getIndividualDashboard,
   getJournalEntries,
-  getTimerSessions,
-  updateIndividualMetadata,
-  completeIndividualOnboarding,
-  getMyMetadata,
 } from "@/api/individual/individual";
+import type { JournalEntry } from "@/api/individual/types";
 import { Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useSearch } from "../contexts/SearchContext";
 import { Card, CardTitle, CardDescription } from "./ui/card";
 import { Button } from "@/components/ui/button";
 
-interface MetadataItem {
-  _id?: string;
-  id?: string;
-  dailyBibleReadingStreakCount?: number;
-  streak?: number;
-  scripturesCount?: number;
-  readingProgress?: number;
-  lastLoginDate?: string;
-}
-
-interface JournalItem {
-  _id?: string;
-  id?: string;
-  title?: string;
-  scriptureReference?: string;
-  content?: string;
-  createdAt: string;
-}
-
 export function IndividualDashboard() {
-  const { setHeader, addNotification } = useLayout();
+  const { setHeader } = useLayout();
   const { user, userType } = useAuth();
+  const { searchTerm } = useSearch();
 
   useEffect(() => {
     setHeader("Dashboard");
   }, [user]);
-  const { searchTerm } = useSearch();
-  const queryClient = useQueryClient();
 
-
-
-  const { data: metadataRes } = useQuery({
-    queryKey: ["myMetadata"],
-    queryFn: getMyMetadata,
-    enabled:
-      !!user && userType === "individual",
+  const { data: dashboardRes, error: dashboardError } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: () => getIndividualDashboard(),
+    enabled: !!user && userType === "individual",
   });
 
-  console.log(metadataRes)
-
-  // Robust userId detection
-  const userId = React.useMemo(() => {
-    return user?.id || "";
-  }, [user]);
-
-  // 1. Fetch personal metadata (for streak and goals)
-  const {
-    data: metadataResponse,
-    error: metadataError,
-  } = useQuery({
-    queryKey: ["individual-metadata", userId],
-    queryFn: () => getMetadataByUserId(userId),
-    enabled: !!userId,
-  });
-
-  // 2. Fetch Journals (to count and show latest)
   const { data: journalsResponse } = useQuery({
-    queryKey: ["journals", userId],
-    queryFn: () => getJournalEntries({ userId, limit: 10 }), // Fetch more to allow better search filtering on dashboard
-    enabled: !!userId,
-  });
-
-  // 3. Fetch Focus Sessions (to count)
-  const { data: timerResponse } = useQuery({
-    queryKey: ["timer-sessions", userId],
-    queryFn: () => getTimerSessions(userId),
-    enabled: !!userId,
+    queryKey: ["journals", user?.id],
+    queryFn: () => getJournalEntries({ userId: user?.id, limit: 10 }),
+    enabled: !!user && userType === "individual",
   });
 
   useEffect(() => {
-    if (metadataError) {
+    if (dashboardError) {
       toast.error(
-        "Failed to load spiritual profile:" +
-          (metadataError instanceof Error
-            ? metadataError.message
-            : String(metadataError)),
+        "Failed to load dashboard: " +
+          (dashboardError instanceof Error
+            ? dashboardError.message
+            : String(dashboardError)),
       );
     }
-  }, [metadataError]);
+  }, [dashboardError]);
 
-  const metadataRaw = metadataResponse?.data as
-    | MetadataItem
-    | MetadataItem[]
-    | undefined;
-  const metadata: MetadataItem | undefined = Array.isArray(metadataRaw)
-    ? metadataRaw[0]
-    : metadataRaw;
+  const dashboard = dashboardRes?.data;
 
-  const journalsRaw = journalsResponse?.data;
-  const journals: JournalItem[] = Array.isArray(journalsRaw)
-    ? (journalsRaw as JournalItem[])
-    : ((journalsRaw as { data?: JournalItem[] } | undefined)?.data ?? []);
+  const journals: JournalEntry[] = Array.isArray(journalsResponse?.data)
+    ? (journalsResponse.data as JournalEntry[])
+    : [];
 
-  // Apply Search Filtering to Journals on Dashboard
+  const journalCount = journalsResponse?.meta?.total ?? journals.length;
+
   const filteredJournals = journals.filter(
     (j) =>
-      (j.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (j.scriptureReference || "")
+      j.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (j.scriptureReference ?? "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase()),
   );
 
-  const timerRaw = timerResponse?.data;
-  const timerSessions = Array.isArray(timerRaw) ? timerRaw : [];
+  const loginStreak = dashboard?.streaks.loginStreak;
+  console.log(loginStreak);
+  const scriptures = dashboard?.totals.scriptures ?? 0;
+  const focusSessions = dashboard?.totals.focusSessions ?? 0;
+  const meditationsThisMonth = dashboard?.totals.meditationsThisMonth ?? 0;
 
-  const journalCount =
-    (journalsRaw as { meta?: { total?: number } } | undefined)?.meta?.total ??
-    journals.length;
-  const focusCount = timerSessions.length;
+  const scriptureDaysCount = dashboard?.consistency.scriptureDates.length ?? 0;
+  const journalDaysCount = dashboard?.consistency.journalDates.length ?? 0;
+  const focusDaysCount = dashboard?.consistency.focusDates.length ?? 0;
 
-  const streak =
-    metadata?.dailyBibleReadingStreakCount ??
-    metadata?.streak ??
-    (localStorage.getItem(`lastStreakUpdate_${userId}`) ? 1 : 0);
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const totalDailyDays = dashboard
+    ? Math.round(
+        (new Date(dashboard.consistency.to).getTime() -
+          new Date(dashboard.consistency.dailyFrom).getTime()) /
+          msPerDay,
+      ) + 1
+    : 30;
+  const totalWeeklyDays = dashboard
+    ? Math.round(
+        (new Date(dashboard.consistency.to).getTime() -
+          new Date(dashboard.consistency.weeklyFrom).getTime()) /
+          msPerDay,
+      ) + 1
+    : 91;
 
-  const calculateJournalingStreak = (entries: JournalItem[]) => {
-    if (!entries || entries.length === 0) return 0;
-    const sortedEntries = [...entries].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    let streakCount = 0;
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
-    const latestEntryDate = new Date(sortedEntries[0].createdAt);
-    latestEntryDate.setHours(0, 0, 0, 0);
-    const diffDaysFromToday = Math.round(
-      (currentDate.getTime() - latestEntryDate.getTime()) /
-      (1000 * 60 * 60 * 24),
-    );
-    if (diffDaysFromToday > 1) return 0;
-    let lastCheckedDate = latestEntryDate;
-    streakCount = 1;
-    for (let i = 1; i < sortedEntries.length; i++) {
-      const entryDate = new Date(sortedEntries[i].createdAt);
-      entryDate.setHours(0, 0, 0, 0);
-      const diff = Math.round(
-        (lastCheckedDate.getTime() - entryDate.getTime()) /
-        (1000 * 60 * 60 * 24),
-      );
-      if (diff === 1) {
-        streakCount++;
-        lastCheckedDate = entryDate;
-      } else if (diff === 0) continue;
-      else break;
-    }
-    return streakCount;
-  };
+  const scriptureProgress = Math.min(
+    100,
+    (scriptureDaysCount / totalDailyDays) * 100,
+  );
+  const journalProgress = Math.min(
+    100,
+    (journalDaysCount / totalWeeklyDays) * 100,
+  );
+  const focusProgress = Math.min(100, (focusDaysCount / totalDailyDays) * 100);
 
-  const journalingStreak = calculateJournalingStreak(journals);
-
-  useEffect(() => {
-    if (metadataResponse?.success && userId) {
-      const metadataItem = Array.isArray(metadataResponse.data)
-        ? metadataResponse.data[0]
-        : metadataResponse.data;
-
-      const currentStreak =
-        metadataItem?.dailyBibleReadingStreakCount ?? metadataItem?.streak ?? 0;
-      const metadataId = metadataItem?._id || metadataItem?.id;
-
-      const today = new Date();
-      const utcToday = Date.UTC(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate(),
-      );
-
-      // Use DB lastLoginDate if available, fallback to localStorage
-      const lastLoginStr =
-        metadataItem?.lastLoginDate ||
-        localStorage.getItem(`lastStreakUpdate_${userId}`);
-      const lastUpdate = lastLoginStr ? new Date(lastLoginStr) : null;
-      let utcLastUpdate = null;
-
-      if (lastUpdate) {
-        utcLastUpdate = Date.UTC(
-          lastUpdate.getFullYear(),
-          lastUpdate.getMonth(),
-          lastUpdate.getDate(),
-        );
-      }
-
-      // If already logged in today, do nothing
-      if (utcLastUpdate === utcToday) return;
-
-      if (!metadataItem) {
-        completeIndividualOnboarding({
-          dailyBibleReadingStreakCount: 1,
-        }).then((res) => {
-          if (res.success) {
-            localStorage.setItem(
-              `lastStreakUpdate_${userId}`,
-              today.toISOString(),
-            );
-            queryClient.invalidateQueries({
-              queryKey: ["individual-metadata", userId],
-            });
-            addNotification({
-              title: "First Login Streak!",
-              description:
-                "We're glad to have you. Your journey of spiritual growth starts today.",
-              time: "Just now",
-              icon: "Flame",
-              color: "text-accent",
-              bg: "bg-accent/10",
-              type: "individual",
-            });
-          }
-        });
-      } else {
-        const diffDays =
-          utcLastUpdate !== null
-            ? Math.round((utcToday - utcLastUpdate) / (1000 * 60 * 60 * 24))
-            : null;
-
-        if (diffDays === null) {
-          // Missing history entirely
-          if (currentStreak === 0 && metadataId) {
-            updateIndividualMetadata(metadataId, {
-              dailyBibleReadingStreakCount: 1,
-            }).then((res) => {
-              if (res.success) {
-                localStorage.setItem(
-                  `lastStreakUpdate_${userId}`,
-                  today.toISOString(),
-                );
-                queryClient.invalidateQueries({
-                  queryKey: ["individual-metadata", userId],
-                });
-              }
-            });
-          } else if (metadataId) {
-            // Streak preserved — no-op: streak count unchanged, timestamp tracked in localStorage only
-            updateIndividualMetadata(metadataId, {
-              dailyBibleReadingStreakCount: currentStreak,
-            }).then((res) => {
-              if (res.success) {
-                localStorage.setItem(
-                  `lastStreakUpdate_${userId}`,
-                  today.toISOString(),
-                );
-                queryClient.invalidateQueries({
-                  queryKey: ["individual-metadata", userId],
-                });
-              }
-            });
-          }
-        } else if (diffDays === 1 && metadataId) {
-          // Increment streak
-          updateIndividualMetadata(metadataId, {
-            dailyBibleReadingStreakCount: currentStreak + 1,
-          }).then((res) => {
-            if (res.success) {
-              localStorage.setItem(
-                `lastStreakUpdate_${userId}`,
-                today.toISOString(),
-              );
-              queryClient.invalidateQueries({
-                queryKey: ["individual-metadata", userId],
-              });
-              addNotification({
-                title: "Login Maintained",
-                description: `You've logged in for ${currentStreak + 1} consecutive days!`,
-                time: "Just now",
-                icon: "TrendingUp",
-                color: "text-green-500",
-                bg: "bg-green-500/10",
-                type: "individual",
-              });
-            }
-          });
-        } else if (diffDays > 1 && metadataId) {
-          // Reset streak
-          updateIndividualMetadata(metadataId, {
-            dailyBibleReadingStreakCount: 1,
-          }).then((res) => {
-            if (res.success) {
-              localStorage.setItem(
-                `lastStreakUpdate_${userId}`,
-                today.toISOString(),
-              );
-              queryClient.invalidateQueries({
-                queryKey: ["individual-metadata", userId],
-              });
-            }
-          });
-        }
-      }
-    }
-  }, [metadataResponse, userId]);
-
-  const journalProgress = Math.min(100, (journalCount / 7) * 100);
-  const focusProgress = Math.min(100, (focusCount / 5) * 100);
-  const readingProgress = metadata?.readingProgress || 0;
+  const pluralise = (count: number, unit: "day" | "week") =>
+    `${count} ${unit}${count === 1 ? "" : "s"}`;
 
   const stats = [
     {
-      title: "Login Streak",
-      value: `${streak === 1 ? "1 day" : `${streak} days`}`,
+      title: "Current Streak",
+      value: loginStreak
+        ? pluralise(loginStreak.count, loginStreak.unit)
+        : "0 days",
       icon: TrendingUp,
       color: "#22c55e",
     },
     {
-      title: "Journaling Streak",
-      value: `${journalingStreak === 1 ? "1 day" : `${journalingStreak} days`}`,
+      title: "Journal Entries",
+      value: journalCount.toString(),
       icon: BookOpen,
       color: "#d4a574",
     },
     {
       title: "Scriptures Read",
-      value: (metadata?.scripturesCount || 0).toString(),
+      value: scriptures.toString(),
       icon: ScrollText,
       color: "#3b82f6",
     },
     {
       title: "Focus Sessions",
-      value: focusCount.toString(),
+      value: focusSessions.toString(),
       icon: Timer,
       color: "#a855f7",
     },
   ];
 
-
   return (
     <div className="space-y-6">
       <p>
         Welcome back,{" "}
-        <span className="font-semibold">
-          {`${user?.name || "Believer"}`}
-        </span>
+        <span className="font-semibold">{user?.name || "Believer"}</span>
       </p>
       <div className="space-y-6 md:space-y-8 max-w-7xl mx-auto">
-        {/* Welcome Section */}
+        {/* Welcome Card */}
         <Card className="relative overflow-hidden shadow-xl shadow-accent/5 p-5 sm:p-8">
           <div className="absolute top-0 right-0 p-6 sm:p-10 opacity-[0.03] dark:opacity-[0.07]">
             <Cross className="w-48 h-48 sm:w-64 sm:h-64 text-accent" />
@@ -367,8 +148,8 @@ export function IndividualDashboard() {
                 Peace be with you.
               </CardTitle>
               <CardDescription className="text-sm sm:text-base max-w-5xl leading-relaxed opacity-80 pb-6">
-                You've completed {journalCount} meditations this month. Your
-                commitment to your spiritual walk is inspiring.
+                You've completed {meditationsThisMonth} meditations this month.
+                Your commitment to your spiritual walk is inspiring.
               </CardDescription>
               <Button
                 href="/scripture"
@@ -380,7 +161,7 @@ export function IndividualDashboard() {
           </div>
         </Card>
 
-        {/* Live Stats Grid */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat) => {
             const Icon = stat.icon;
@@ -391,9 +172,9 @@ export function IndividualDashboard() {
                     <p className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 text-accent-foreground/70">
                       {stat.title}
                     </p>
-                    <h3 className="text-lg sm:text-xl font-bold leading-tight">
+                    <p className="text-xl sm:text-2xl font-medium leading-tight">
                       {stat.value}
-                    </h3>
+                    </p>
                   </div>
                   <div
                     className="w-12 h-12 rounded-lg flex items-center justify-center"
@@ -407,16 +188,17 @@ export function IndividualDashboard() {
           })}
         </div>
 
-        {/* Progress and Journals */}
+        {/* Recent Journal Entries + This Week's Progress */}
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Recent Bible Entries (Real) */}
           <Card padding="lg">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
                 <div className="p-2 bg-accent/10 rounded-lg">
                   <BookOpen className="w-5 h-5 text-accent" />
                 </div>
-                {searchTerm ? `Search:"${searchTerm}"` : "Latest Meditations"}
+                {searchTerm
+                  ? `Search: "${searchTerm}"`
+                  : "Recent Journal Entries"}
               </h3>
               <Button
                 asChild
@@ -429,38 +211,39 @@ export function IndividualDashboard() {
 
             <div className="space-y-4">
               {filteredJournals.length > 0 ? (
-                filteredJournals
-                  .slice(0, 3)
-                  .map((entry, index: number) => (
-                    <Card
-                      asChild
-                      key={entry._id || index}
-                      variant="interactive"
-                      padding="none"
-                      className="group"
+                filteredJournals.slice(0, 3).map((entry, index) => (
+                  <Card
+                    asChild
+                    key={entry.id || index}
+                    variant="interactive"
+                    padding="none"
+                    className="group"
+                  >
+                    <Link
+                      to="/sunday-journal"
+                      state={{ entryId: entry.id }}
+                      className="p-5 block"
                     >
-                      <Link
-                        to="/sunday-journal"
-                        state={{ entryId: entry._id }}
-                        className="p-5 block"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="text-sm text-foreground group-hover:text-accent transition-colors">
-                            {entry.title}
-                          </p>
-                          <p className="text-[10px] font-bold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded uppercase">
-                            {new Date(entry.createdAt).toLocaleDateString(
-                              undefined,
-                              { month: "short", day: "numeric" },
-                            )}
-                          </p>
-                        </div>
-                        <p className="text-xs text-accent italic opacity-80 font-medium">
-                          {entry.scriptureReference}
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm text-foreground group-hover:text-accent transition-colors">
+                          {entry.title}
                         </p>
-                      </Link>
-                    </Card>
-                  ))
+                        <p className="text-[10px] font-bold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded uppercase">
+                          {new Date(entry.createdAt).toLocaleDateString(
+                            undefined,
+                            {
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )}
+                        </p>
+                      </div>
+                      <p className="text-xs text-accent italic opacity-80 font-medium">
+                        {entry.scriptureReference}
+                      </p>
+                    </Link>
+                  </Card>
+                ))
               ) : (
                 <Card
                   variant="ghost"
@@ -470,7 +253,7 @@ export function IndividualDashboard() {
                   <BookOpen className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
                   <p className="text-sm text-muted-foreground italic">
                     {searchTerm
-                      ? `No meditations found matching"${searchTerm}"`
+                      ? `No entries found matching "${searchTerm}"`
                       : "Begin your first entry to track your growth."}
                   </p>
                 </Card>
@@ -486,43 +269,43 @@ export function IndividualDashboard() {
             </Button>
           </Card>
 
-          {/* Consistency Tracking */}
+          {/* Consistency Overview */}
           <Card padding="lg">
             <h3 className="text-xl font-bold text-foreground mb-10 flex items-center gap-3">
               <div className="p-2 bg-green-500/10 rounded-lg">
                 <TrendingUp className="w-5 h-5 text-green-500" />
               </div>
-              Consistency Tracking
+              Consistency Overview
             </h3>
 
             <div className="space-y-10">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm font-bold text-foreground uppercase tracking-wider">
-                    Reading Plan
+                    Daily Scripture Reading
                   </p>
                   <p className="text-[10px] font-bold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
-                    {readingProgress}% Complete
+                    {scriptureDaysCount}/{totalDailyDays} days
                   </p>
                 </div>
                 <div className="h-3 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-1000"
                     style={{
-                      width: `${readingProgress}%`,
+                      width: `${scriptureProgress}%`,
                       backgroundColor: "#22c55e",
                     }}
-                  ></div>
+                  />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm font-bold text-foreground uppercase tracking-wider">
-                    Journaling Streak
+                    Journal Entries
                   </p>
                   <p className="text-[10px] font-bold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
-                    {Math.round(journalingStreak)} days
+                    {journalDaysCount}/{totalWeeklyDays} days
                   </p>
                 </div>
                 <div className="h-3 bg-muted rounded-full overflow-hidden">
@@ -532,7 +315,7 @@ export function IndividualDashboard() {
                       width: `${journalProgress}%`,
                       backgroundColor: "#d4a574",
                     }}
-                  ></div>
+                  />
                 </div>
               </div>
 
@@ -542,7 +325,7 @@ export function IndividualDashboard() {
                     Focus Sessions
                   </p>
                   <p className="text-[10px] font-bold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
-                    {Math.round(focusProgress)}% Goal
+                    {focusDaysCount}/{totalDailyDays} days
                   </p>
                 </div>
                 <div className="h-3 bg-muted rounded-full overflow-hidden">
@@ -552,14 +335,14 @@ export function IndividualDashboard() {
                       width: `${focusProgress}%`,
                       backgroundColor: "#a855f7",
                     }}
-                  ></div>
+                  />
                 </div>
               </div>
             </div>
           </Card>
         </div>
 
-        {/* Quick Tools */}
+        {/* Spiritual Disciplines */}
         <Card padding="lg">
           <h3 className="text-xl font-bold text-foreground mb-8">
             Spiritual Disciplines
