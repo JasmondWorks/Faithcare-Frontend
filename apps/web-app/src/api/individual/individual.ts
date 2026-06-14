@@ -1,5 +1,12 @@
 import type { ApiResponse, FilterRequest } from "../shared/types";
-import { apiRequest, apiGet, apiPost, apiPatch, apiPut, apiDelete } from "../helper";
+import {
+  apiRequest,
+  apiGet,
+  apiPost,
+  apiPatch,
+  apiPut,
+  apiDelete,
+} from "../helper";
 import type {
   JournalEntry,
   CreateJournalEntryRequest,
@@ -12,23 +19,34 @@ import type {
   UpdateUserMetadataRequest,
   GetScriptureHistoryResponse,
   GetTodayScriptureResponse,
+  DashboardData,
+  DashboardWindow,
 } from "./types";
 
 // ── User metadata ─────────────────────────────────────────────────────────────
 
-export function completeIndividualOnboarding(payload: CreateUserMetadataRequest): Promise<ApiResponse<null>> {
+export function completeIndividualOnboarding(
+  payload: CreateUserMetadataRequest,
+): Promise<ApiResponse<null>> {
   return apiPost<null>("/users/metadata", payload);
 }
 
-export function getMetadataById(id: string): Promise<ApiResponse<UserMetadata>> {
+export function getMetadataById(
+  id: string,
+): Promise<ApiResponse<UserMetadata>> {
   return apiGet<UserMetadata>(`/users/metadata/${id}`);
 }
 
-export function updateIndividualMetadata(id: string, payload: UpdateUserMetadataRequest): Promise<ApiResponse<UserMetadata>> {
+export function updateIndividualMetadata(
+  id: string,
+  payload: UpdateUserMetadataRequest,
+): Promise<ApiResponse<UserMetadata>> {
   return apiPatch<UserMetadata>(`/users/metadata/${id}`, payload);
 }
 
-export function deleteIndividualMetadata(id: string): Promise<ApiResponse<void>> {
+export function deleteIndividualMetadata(
+  id: string,
+): Promise<ApiResponse<void>> {
   return apiDelete(`/users/metadata/${id}`);
 }
 
@@ -36,21 +54,42 @@ export function getMyMetadata(): Promise<ApiResponse<UserMetadata>> {
   return apiGet<UserMetadata>("/users/metadata/me");
 }
 
-export function getMetadataByUserId(userId: string): Promise<ApiResponse<UserMetadata>> {
+export function getMetadataByUserId(
+  userId: string,
+): Promise<ApiResponse<UserMetadata>> {
   return apiGet<UserMetadata>(`/users/metadata/user/${userId}`);
+}
+
+export function getIndividualDashboard(
+  window?: DashboardWindow,
+): Promise<ApiResponse<DashboardData>> {
+  return apiGet<DashboardData>(
+    "/users/metadata/me/dashboard",
+    window ? { window } : undefined,
+  );
 }
 
 // ── Journal entries ───────────────────────────────────────────────────────────
 
-export function createJournalEntry(payload: CreateJournalEntryRequest): Promise<ApiResponse<JournalEntry>> {
+export function createJournalEntry(
+  payload: CreateJournalEntryRequest,
+): Promise<ApiResponse<JournalEntry>> {
   return apiPost<JournalEntry>("/journal/entries", payload);
 }
 
-export function getJournalEntries(params?: FilterRequest): Promise<ApiResponse<JournalEntry[]>> {
-  return apiGet<JournalEntry[]>("/journal/entries", params as Record<string, string>);
+export function getJournalEntries(
+  params?: FilterRequest,
+): Promise<ApiResponse<JournalEntry[]>> {
+  return apiGet<JournalEntry[]>(
+    "/journal/entries",
+    params as Record<string, string>,
+  );
 }
 
-export function updateJournalEntry(id: string, payload: UpdateJournalEntryRequest): Promise<ApiResponse<JournalEntry>> {
+export function updateJournalEntry(
+  id: string,
+  payload: UpdateJournalEntryRequest,
+): Promise<ApiResponse<JournalEntry>> {
   return apiPut<JournalEntry>(`/journal/entries/${id}`, payload);
 }
 
@@ -71,57 +110,103 @@ function extractTimerData<T>(parsed: unknown): T {
   return parsed as T;
 }
 
-export async function createTimerSession(payload: CreateFocusSessionRequest): Promise<ApiResponse<FocusSession>> {
+export async function createTimerSession(
+  payload: CreateFocusSessionRequest,
+): Promise<ApiResponse<FocusSession>> {
   try {
-    const res = await apiRequest("/timer/sessions", { method: "POST", body: JSON.stringify(payload) });
+    const res = await apiRequest("/timer/sessions", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
     const text = await res.text();
     const json = text ? JSON.parse(text) : {};
-    if (!res.ok) throw new Error(json.message || "Failed to create timer session");
+    if (!res.ok)
+      throw new Error(json.message || "Failed to create timer session");
     return { success: true, data: extractTimerData<FocusSession>(json) };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : String(e) };
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
   }
 }
 
-export async function getTimerSessions(userId: string, params?: Record<string, string>): Promise<ApiResponse<FocusSession[]>> {
+export async function getTimerSessions(
+  userId: string,
+  params?: Record<string, string>,
+): Promise<ApiResponse<FocusSession[]>> {
   try {
-    const res = await apiRequest("/timer/sessions", { method: "GET", params: { userId, ...params } });
+    const res = await apiRequest("/timer/sessions", {
+      method: "GET",
+      params: { userId, ...params },
+    });
     const text = await res.text();
     const json = text ? JSON.parse(text) : [];
-    if (!res.ok) throw new Error(json.message || "Failed to fetch timer sessions");
-    return { success: true, data: extractTimerData<FocusSession[]>(json), meta: json?.meta };
+    if (!res.ok)
+      throw new Error(json.message || "Failed to fetch timer sessions");
+    return {
+      success: true,
+      data: extractTimerData<FocusSession[]>(json),
+      meta: json?.meta,
+    };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : String(e) };
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
   }
 }
 
-export async function updateTimerSession(id: string, payload: UpdateFocusSessionRequest): Promise<ApiResponse<FocusSession>> {
+export async function updateTimerSession(
+  id: string,
+  payload: UpdateFocusSessionRequest,
+): Promise<ApiResponse<FocusSession>> {
   try {
-    const res = await apiRequest(`/timer/sessions/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+    const res = await apiRequest(`/timer/sessions/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
     const text = await res.text();
     const json = text ? JSON.parse(text) : {};
-    if (!res.ok) throw new Error(json.message || "Failed to update timer session");
+    if (!res.ok)
+      throw new Error(json.message || "Failed to update timer session");
     return { success: true, data: extractTimerData<FocusSession>(json) };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : String(e) };
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
   }
 }
 
-export async function completeTimerSession(id: string): Promise<ApiResponse<FocusSession>> {
+export async function completeTimerSession(
+  id: string,
+): Promise<ApiResponse<FocusSession>> {
   try {
-    const res = await apiRequest(`/timer/sessions/${id}/complete`, { method: "PATCH" });
+    const res = await apiRequest(`/timer/sessions/${id}/complete`, {
+      method: "PATCH",
+    });
     const text = await res.text();
     const json = text ? JSON.parse(text) : {};
-    if (!res.ok) throw new Error(json.message || "Failed to complete timer session");
+    if (!res.ok)
+      throw new Error(json.message || "Failed to complete timer session");
     return { success: true, data: extractTimerData<FocusSession>(json) };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : String(e) };
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
   }
 }
 
-export async function getActiveTimerSession(userId: string): Promise<ApiResponse<FocusSession>> {
+export async function getActiveTimerSession(
+  userId: string,
+): Promise<ApiResponse<FocusSession>> {
   try {
-    const res = await apiRequest("/timer/sessions/active", { method: "GET", params: { userId } });
+    const res = await apiRequest("/timer/sessions/active", {
+      method: "GET",
+      params: { userId },
+    });
     const text = await res.text();
     if (!res.ok) {
       const json = text ? JSON.parse(text) : {};
@@ -130,7 +215,10 @@ export async function getActiveTimerSession(userId: string): Promise<ApiResponse
     const json = text ? JSON.parse(text) : null;
     return { success: true, data: extractTimerData<FocusSession>(json) };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : String(e) };
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
   }
 }
 
@@ -144,34 +232,54 @@ export async function getTodayScripture(): Promise<GetTodayScriptureResponse> {
   try {
     const res = await apiRequest("/scripture/global/today");
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || `Failed to fetch scripture (${res.status})`);
+    if (!res.ok)
+      throw new Error(
+        data.message || `Failed to fetch scripture (${res.status})`,
+      );
     return data;
   } catch (error) {
-    return (error instanceof Error ? error.message : String(error)) as unknown as GetTodayScriptureResponse;
+    return (error instanceof Error
+      ? error.message
+      : String(error)) as unknown as GetTodayScriptureResponse;
   }
 }
 
-export async function markScriptureAsRead(scriptureId: string): Promise<ApiResponse<void>> {
+export async function markScriptureAsRead(
+  scriptureId: string,
+): Promise<ApiResponse<void>> {
   try {
-    const res = await apiRequest(`/scripture/${scriptureId}/complete`, { method: "PATCH" });
+    const res = await apiRequest(`/scripture/${scriptureId}/complete`, {
+      method: "PATCH",
+    });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || `Failed to mark scripture as read (${res.status})`);
+    if (!res.ok)
+      throw new Error(
+        data.message || `Failed to mark scripture as read (${res.status})`,
+      );
     return data;
   } catch (error) {
-    return (error instanceof Error ? error.message : String(error)) as unknown as ApiResponse<void>;
+    return (error instanceof Error
+      ? error.message
+      : String(error)) as unknown as ApiResponse<void>;
   }
 }
 
-export async function getScriptureHistory(params: FilterRequest): Promise<ApiResponse<GetScriptureHistoryResponse>> {
+export async function getScriptureHistory(
+  params: FilterRequest,
+): Promise<ApiResponse<GetScriptureHistoryResponse>> {
   try {
     const res = await apiRequest("/scripture/history", {
       params: params as unknown as Record<string, string>,
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || `Failed to fetch scripture history (${res.status})`);
+    if (!res.ok)
+      throw new Error(
+        data.message || `Failed to fetch scripture history (${res.status})`,
+      );
     return data;
   } catch (error) {
-    return (error instanceof Error ? error.message : String(error)) as unknown as ApiResponse<GetScriptureHistoryResponse>;
+    return (error instanceof Error
+      ? error.message
+      : String(error)) as unknown as ApiResponse<GetScriptureHistoryResponse>;
   }
 }
-
